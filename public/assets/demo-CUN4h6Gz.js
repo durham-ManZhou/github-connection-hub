@@ -440,7 +440,7 @@ async function f(e, t) {
     case `reviewRegistration`: {
       let actor = r(`profiles`).find((row) => row.account === t.actor);
       if (!actor || !(actor.role === `super_admin` || (actor.role === `specialist` && actor.admin_granted)))
-        throw Error(`只有超级管理员和已授予更改管理员权限的专人可以批准注册`);
+        throw Error(`只有超级管理员和已授予日常管理权限的专人可以批准注册`);
       let e = r(`registrations`).find((e) => e.id === t.id && e.status === `pending`);
       if (!e) throw Error(`这条申请已经处理过了`);
       let reviewer = String(t.reviewer || `管理员`);
@@ -590,7 +590,7 @@ async function f(e, t) {
           (actor.role === `specialist` && actor.admin_granted)
         )
       )
-        throw Error(`只有超级管理员和已授予更改管理员权限的专人可以批准资料申请`);
+        throw Error(`只有超级管理员和已授予日常管理权限的专人可以批准资料申请`);
       let e = r(`profile_changes`).find((e) => e.id === t.id && e.status === `pending`);
       if (!e) throw Error(`这条申请已经处理过了`);
       let row = r(`profiles`).find((row) => row.account === e.account);
@@ -754,7 +754,7 @@ async function f(e, t) {
     case `adminSaveSetting`: {
       let actor = r(`profiles`).find((e) => e.account === t.actor);
       let allowed = actor && (actor.role === `super_admin` || (actor.role === `specialist` && actor.admin_granted));
-      if (t.key === `system` && !allowed) throw Error(`只有超级管理员和已授予更改管理员权限的专人可以修改预约名额`);
+      if (t.key === `system` && !allowed) throw Error(`只有超级管理员和已授予日常管理权限的专人可以修改预约名额`);
       n._settings = { ...(n._settings || {}), [t.key]: t.value };
       break;
     }
@@ -833,7 +833,7 @@ async function f(e, t) {
     case `setAdminGrant`: {
       let actor = r(`profiles`).find((row) => row.account === t.actor);
       if (!actor || actor.role !== `super_admin`)
-        throw Error(`只有超级管理员可以授予或移除更改管理员权限`);
+        throw Error(`只有超级管理员可以授予或移除日常管理权限`);
       let e = r(`profiles`).find((e) => e.account === t.account);
       if (!e) throw Error(`账号不存在`);
       if (e.role !== `specialist`) throw Error(`只能给专人设置管理员权限`);
