@@ -99,6 +99,7 @@
         .forEach(function (r) {
           todos.push({
             id: "reg-" + r.id,
+            goId: r.id,
             cat: "account",
             tag: "账号待审",
             nav: "待处理申请",
@@ -117,6 +118,7 @@
           if (p.accountNew && p.accountNew !== p.account) parts.push("邮箱改为 " + p.accountNew);
           todos.push({
             id: "pc-" + p.id,
+            goId: p.id,
             cat: "account",
             tag: "资料待审",
             nav: "待处理申请",
@@ -132,9 +134,10 @@
         .forEach(function (t) {
           todos.push({
             id: "tr-" + t.id,
+            goId: t.id,
             cat: "transfer",
             tag: "转交审批",
-            nav: "工作台",
+            nav: "待处理申请",
             text:
               q(t.from, myName) + " 申请将 " + q(leadName(t.lead_id), myName) +
               " 转给 " + q(t.to, myName) + (t.reason ? "（原因：" + t.reason + "）" : ""),
@@ -152,6 +155,7 @@
         .forEach(function (t) {
           todos.push({
             id: "recv-" + t.id,
+            goId: t.lead_id,
             cat: "transfer",
             tag: "待接收",
             nav: "工作台",
@@ -181,6 +185,7 @@
         var when = diff === 0 ? "今天" : diff === 1 ? "明天" : fmtDate(b.visit_date);
         todos.push({
           id: "bk-" + b.id,
+          goId: b.id,
           cat: "booking",
           tag: "到校预约",
           nav: "到校预约",
@@ -205,6 +210,7 @@
         var when = diff === 0 ? "今天" : diff === 1 ? "明天" : diff + " 天后（" + fmtDate(e.starts_at) + "）";
         todos.push({
           id: "ev-" + e.id,
+          goId: e.id,
           cat: "event",
           tag: "活动提醒",
           nav: "活动管理",
@@ -386,6 +392,11 @@
   }
   function goToUnsafe(todo) {
     toggleDrawer(false);
+    if (typeof window.__adminGo === "function") {
+      /* 使用系统内置跳转：按记录 id 打开栏目，预约会定位到具体日期并展开 */
+      window.__adminGo(todo.nav, todo.goId || "");
+      return;
+    }
     setTimeout(function () {
       var candidates = document.querySelectorAll("nav a, nav button, aside a, aside button");
       for (var i = 0; i < candidates.length; i++) {

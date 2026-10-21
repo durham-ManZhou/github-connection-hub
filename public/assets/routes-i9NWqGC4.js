@@ -41143,7 +41143,7 @@ function iR({ userId: e, name: t, isSuper: n }) {
         l(!1),
         window.scrollTo({ top: 0 }));
     },
-    T = `${i}-${o.n}`;
+    T = ((window.__adminGo = w), `${i}-${o.n}`);
   return (0, L.jsxs)(`div`, {
     className: `min-h-screen bg-background text-foreground`,
     children: [
