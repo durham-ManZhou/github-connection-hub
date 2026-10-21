@@ -377,6 +377,21 @@
     }
   }
 
+  /* 跳转到对应栏目：点击左侧菜单中文字匹配的项 */
+  function goTo(navLabel) {
+    toggleDrawer(false);
+    setTimeout(function () {
+      var candidates = document.querySelectorAll("nav a, nav button, aside a, aside button");
+      for (var i = 0; i < candidates.length; i++) {
+        var el = candidates[i];
+        if ((el.textContent || "").replace(/\s/g, "").indexOf(navLabel) >= 0) {
+          el.click();
+          return;
+        }
+      }
+    }, 150);
+  }
+
   function renderDrawer() {
     var session = me();
     if (!session) return;
@@ -421,9 +436,22 @@
       line.appendChild(chip(todo.cat, todo.tag));
       line.appendChild(el("span", "font-size:13px;line-height:1.6;color:#0f172a;", todo.text));
       card.appendChild(line);
-      if (todo.actions && todo.actions.length) {
+      if ((todo.actions && todo.actions.length) || todo.nav) {
         var row = el("div", "display:flex;gap:8px;margin-top:10px;justify-content:flex-end;");
-        todo.actions.forEach(function (action) {
+        if (todo.nav) {
+          var navBtn = el(
+            "button",
+            "font-size:12px;font-weight:600;padding:5px 14px;border-radius:8px;cursor:pointer;" +
+              "background:#fff;color:#1d4ed8;border:1px solid #93c5fd;",
+            "前往" + todo.nav + " →"
+          );
+          navBtn.type = "button";
+          navBtn.addEventListener("click", function () {
+            goTo(todo.nav);
+          });
+          row.appendChild(navBtn);
+        }
+        (todo.actions || []).forEach(function (action) {
           var b = el(
             "button",
             "font-size:12px;font-weight:600;padding:5px 14px;border-radius:8px;cursor:pointer;" +
