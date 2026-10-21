@@ -31635,7 +31635,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                         `option`,
                         {
                           value: e.id,
-                          children: [e.name, `（`, __who(e.owner || `未分配`), `）`],
+                          children: [e.name, `（`, e.owner === n ? `你` : e.owner, `）`],
                         },
                         e.id,
                       ),
@@ -41143,7 +41143,7 @@ function iR({ userId: e, name: t, isSuper: n }) {
         l(!1),
         window.scrollTo({ top: 0 }));
     },
-    T = `${i}-${o.n}`;
+    T = ((window.__adminGo = w), `${i}-${o.n}`);
   return (0, L.jsxs)(`div`, {
     className: `min-h-screen bg-background text-foreground`,
     children: [
