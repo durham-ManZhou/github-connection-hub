@@ -601,6 +601,13 @@ async function f(e, t) {
         let oldName = row.name;
         ((row.name = e.nameNew), (row.account = e.accountNew));
         if (oldName !== row.name) {
+          r(`leads`).forEach((l) => { l.owner === oldName && (l.owner = row.name); });
+          r(`transfers`).forEach((x) => {
+            x.from === oldName && (x.from = row.name);
+            x.to === oldName && (x.to = row.name);
+            x.by === oldName && (x.by = row.name);
+          });
+          r(`bookings`).forEach((b) => { b.owner === oldName && (b.owner = row.name); });
           row.formerNames = [...new Set([...(row.formerNames || []), oldName])];
           r(`notifications`).forEach((item) => {
             Array.isArray(item.to) &&
