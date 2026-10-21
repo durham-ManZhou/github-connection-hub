@@ -31458,6 +31458,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
       if (!e || !x) return void Z.error(`请选择客户和接收顾问`);
       if (__isSuperName(x, a)) return void Z.error(`不能转交给超级管理员`);
       if (e.owner === x) return void Z.error(`客户已经在这位顾问名下`);
+      if (!e.owner) return void Z.error(`未分配的客户不能转交，请先由专人分配`);
       O(async () => {
         (await o(`transfers`, {
           lead_id: e.id,
@@ -31628,7 +31629,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                 children: [
                   (0, L.jsx)(`option`, { value: ``, children: `选择客户` }),
                   t
-                    .filter((e) => !e.mergedInto && !v(e))
+                    .filter((e) => !e.mergedInto && !v(e) && e.owner)
                     .map((e) =>
                       (0, L.jsxs)(
                         `option`,
