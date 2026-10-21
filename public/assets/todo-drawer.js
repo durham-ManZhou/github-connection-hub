@@ -149,30 +149,53 @@
         });
     }
 
-    if (session.role === "advisor") {
+    var dismissed = getDismissed(session);
+    {
       (data.transfers || [])
         .filter(function (t) { return t.status === "待接收" && t.to === myName; })
         .forEach(function (t) {
+          var isAssign = t.kind === "assign" || t.from === "未分配";
+          var src = t.by && t.by !== t.from ? q(t.by, myName) : q(t.from, myName);
           todos.push({
             id: "recv-" + t.id,
             goId: t.lead_id,
             cat: "transfer",
-            tag: "待接收",
+            tag: isAssign ? "新客户待接收" : "待接收",
             nav: "工作台",
-            text:
-              q(t.from, myName) + " 申请将客户 " + q(leadName(t.lead_id), myName) +
-              " 转交给「你」，确认后正式归入你的名下",
+            text: isAssign
+              ? src + " 把新客户 " + q(leadName(t.lead_id), myName) + " 分配给「你」，确认接收后正式归入你的名下"
+              : src + " 把客户 " + q(leadName(t.lead_id), myName) + " 从 " + q(t.from, myName) +
+                " 名下转交给「你」，确认接收后正式归入你的名下",
             actions: [
               { label: "确认接收", kind: "acceptTransfer", ref: t.id, primary: true },
               { label: "拒绝", kind: "declineTransfer", ref: t.id },
             ],
           });
         });
+      /* 被拒收：通知发起人（转出人或分配人），客户仍在原处 */
+      (data.transfers || [])
+        .filter(function (t) {
+          var owner = t.from === "未分配" || t.kind === "assign" ? t.by : t.from;
+          return t.status === "接收方拒绝" && owner === myName && dismissed.indexOf("bounce-" + t.id) < 0;
+        })
+        .forEach(function (t) {
+          var unassigned = t.from === "未分配";
+          todos.push({
+            id: "bounce-" + t.id,
+            goId: t.lead_id,
+            cat: "transfer",
+            tag: "转交被拒",
+            nav: "工作台",
+            text:
+              q(t.to, myName) + " 拒绝接收客户 " + q(leadName(t.lead_id), myName) +
+              (unassigned ? "，该客户仍为未分配，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
+            actions: [{ label: "知道了", kind: "dismiss", ref: "bounce-" + t.id }],
+          });
+        });
     }
 
-    /* 全员：到校预约（今天/明天，或待确认） */
-    var dismissed = getDismissed(session);
-    (data.bookings || [])
+    /* 到校预约：仅专人处理（不论是否有日常管理权限） */
+    (session.role === "specialist" ? data.bookings || [] : [])
       .filter(function (b) {
         var diff = dayDiff(b.visit_date);
         return (
@@ -308,16 +331,16 @@
           id: tr.lead_id,
           values: {
             owner: tr.to,
-            note: "客户由 " + tr.from + " 转交给 " + tr.to + "（已审批并确认）",
+            note: tr.from === "未分配" ? "客户分配给 " + tr.to + "（已确认接收）" : "客户由 " + tr.from + " 转交给 " + tr.to + "（已确认接收）",
             author: tr.to,
           },
         });
       }
       await notify(
-        [...approverNames, tr.from, tr.to],
+        [...approverNames, tr.from, tr.to, tr.by],
         accept
-          ? "「" + tr.to + "」已接收「" + tr.from + "」转来的「" + leadName(tr.lead_id) + "」"
-          : "「" + tr.to + "」未接收「" + tr.from + "」转来的「" + leadName(tr.lead_id) + "」",
+          ? "「" + tr.to + "」已接收客户「" + leadName(tr.lead_id) + "」"
+          : "「" + tr.to + "」拒绝接收客户「" + leadName(tr.lead_id) + "」" + (tr.from === "未分配" ? "，客户仍为未分配" : "，客户仍在「" + tr.from + "」名下"),
         "lead",
         tr.lead_id
       );
