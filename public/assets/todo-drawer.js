@@ -382,6 +382,9 @@
 
   /* 跳转到对应栏目：点击左侧菜单，再按日期范围筛选并高亮对应条目 */
   function goTo(todo) {
+    try { goToUnsafe(todo); } catch (e) { console.error("[待办跳转]", e); }
+  }
+  function goToUnsafe(todo) {
     toggleDrawer(false);
     setTimeout(function () {
       var candidates = document.querySelectorAll("nav a, nav button, aside a, aside button");
@@ -392,7 +395,7 @@
           break;
         }
       }
-      setTimeout(function () {
+      setTimeout(function () { try {
         /* 预约页：先切到对应日期范围（今天/明天/一周内/一个月内） */
         if (todo.navRange) {
           var tabs = document.querySelectorAll("main button");
@@ -426,7 +429,7 @@
             }
           }, 600);
         }
-      }, 700);
+      } catch (e) { console.error("[待办跳转]", e); } }, 700);
     }, 150);
   }
 
