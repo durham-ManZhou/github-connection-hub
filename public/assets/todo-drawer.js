@@ -205,6 +205,7 @@
           id: "ev-" + e.id,
           cat: "event",
           tag: "活动提醒",
+          nav: "活动管理",
           text: "活动 " + q(e.name, myName) + " 将于 " + when + " 举行，请关注报名与组织",
           actions: [{ label: "知道了", kind: "dismiss", ref: "ev-" + e.id }],
         });
