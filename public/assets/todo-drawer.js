@@ -479,7 +479,7 @@
           var c = COLORS[BELL_RULES[i].cat];
           var tag = el(
             "span",
-            "display:inline-block;padding:0 6px;border-radius:999px;font-size:10px;font-weight:700;" +
+            "display:inline-block;padding:0 6px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap;" +
               "background:" + c.bg + ";color:" + c.fg + ";border:1px solid " + c.border + ";margin-right:4px;",
             BELL_RULES[i].tag
           );
