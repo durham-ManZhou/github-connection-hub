@@ -31635,7 +31635,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                         `option`,
                         {
                           value: e.id,
-                          children: [e.name, `（`, __who(e.owner || `未分配`), `）`],
+                          children: [e.name, `（`, e.owner === n ? `你` : e.owner, `）`],
                         },
                         e.id,
                       ),
