@@ -101,6 +101,7 @@
             id: "reg-" + r.id,
             cat: "account",
             tag: "账号待审",
+            nav: "待处理申请",
             text: q(r.name, myName) + " 申请注册账号（" + r.account + "）",
             actions: [
               { label: "批准", kind: "approveReg", ref: r.id, primary: true },
@@ -118,6 +119,7 @@
             id: "pc-" + p.id,
             cat: "account",
             tag: "资料待审",
+            nav: "待处理申请",
             text: q(p.name, myName) + " 申请修改资料" + (parts.length ? "（" + parts.join("、") + "）" : ""),
             actions: [
               { label: "同意", kind: "approveProfile", ref: p.id, primary: true },
@@ -132,6 +134,7 @@
             id: "tr-" + t.id,
             cat: "transfer",
             tag: "转交审批",
+            nav: "工作台",
             text:
               q(t.from, myName) + " 申请将 " + q(leadName(t.lead_id), myName) +
               " 转给 " + q(t.to, myName) + (t.reason ? "（原因：" + t.reason + "）" : ""),
@@ -151,6 +154,7 @@
             id: "recv-" + t.id,
             cat: "transfer",
             tag: "待接收",
+            nav: "工作台",
             text:
               q(t.from, myName) + " 申请将客户 " + q(leadName(t.lead_id), myName) +
               " 转交给「你」，确认后正式归入你的名下",
@@ -179,6 +183,7 @@
           id: "bk-" + b.id,
           cat: "booking",
           tag: "到校预约",
+          nav: "到校预约",
           text:
             q(b.name, myName) + " 预约 " + when + (b.slot ? " " + b.slot : "") +
             " 到校咨询（" + (b.people || 1) + " 人）" +
@@ -200,6 +205,7 @@
           id: "ev-" + e.id,
           cat: "event",
           tag: "活动提醒",
+          nav: "活动管理",
           text: "活动 " + q(e.name, myName) + " 将于 " + when + " 举行，请关注报名与组织",
           actions: [{ label: "知道了", kind: "dismiss", ref: "ev-" + e.id }],
         });
@@ -371,6 +377,21 @@
     }
   }
 
+  /* 跳转到对应栏目：点击左侧菜单中文字匹配的项 */
+  function goTo(navLabel) {
+    toggleDrawer(false);
+    setTimeout(function () {
+      var candidates = document.querySelectorAll("nav a, nav button, aside a, aside button");
+      for (var i = 0; i < candidates.length; i++) {
+        var el = candidates[i];
+        if ((el.textContent || "").replace(/\s/g, "").indexOf(navLabel) >= 0) {
+          el.click();
+          return;
+        }
+      }
+    }, 150);
+  }
+
   function renderDrawer() {
     var session = me();
     if (!session) return;
@@ -415,9 +436,22 @@
       line.appendChild(chip(todo.cat, todo.tag));
       line.appendChild(el("span", "font-size:13px;line-height:1.6;color:#0f172a;", todo.text));
       card.appendChild(line);
-      if (todo.actions && todo.actions.length) {
+      if ((todo.actions && todo.actions.length) || todo.nav) {
         var row = el("div", "display:flex;gap:8px;margin-top:10px;justify-content:flex-end;");
-        todo.actions.forEach(function (action) {
+        if (todo.nav) {
+          var navBtn = el(
+            "button",
+            "font-size:12px;font-weight:600;padding:5px 14px;border-radius:8px;cursor:pointer;" +
+              "background:#fff;color:#1d4ed8;border:1px solid #93c5fd;",
+            "前往" + todo.nav + " →"
+          );
+          navBtn.type = "button";
+          navBtn.addEventListener("click", function () {
+            goTo(todo.nav);
+          });
+          row.appendChild(navBtn);
+        }
+        (todo.actions || []).forEach(function (action) {
           var b = el(
             "button",
             "font-size:12px;font-weight:600;padding:5px 14px;border-radius:8px;cursor:pointer;" +
