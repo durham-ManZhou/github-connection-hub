@@ -184,6 +184,8 @@
           cat: "booking",
           tag: "到校预约",
           nav: "到校预约",
+          navRange: diff === 0 ? "今天" : diff === 1 ? "明天" : diff <= 6 ? "一周内" : "一个月内",
+          navName: b.name,
           text:
             q(b.name, myName) + " 预约 " + when + (b.slot ? " " + b.slot : "") +
             " 到校咨询（" + (b.people || 1) + " 人）" +
