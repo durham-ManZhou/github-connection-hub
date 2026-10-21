@@ -380,18 +380,53 @@
     }
   }
 
-  /* 跳转到对应栏目：点击左侧菜单中文字匹配的项 */
-  function goTo(navLabel) {
+  /* 跳转到对应栏目：点击左侧菜单，再按日期范围筛选并高亮对应条目 */
+  function goTo(todo) {
     toggleDrawer(false);
     setTimeout(function () {
       var candidates = document.querySelectorAll("nav a, nav button, aside a, aside button");
       for (var i = 0; i < candidates.length; i++) {
-        var el = candidates[i];
-        if ((el.textContent || "").replace(/\s/g, "").indexOf(navLabel) >= 0) {
-          el.click();
-          return;
+        var item = candidates[i];
+        if ((item.textContent || "").replace(/\s/g, "").indexOf(todo.nav) >= 0) {
+          item.click();
+          break;
         }
       }
+      setTimeout(function () {
+        /* 预约页：先切到对应日期范围（今天/明天/一周内/一个月内） */
+        if (todo.navRange) {
+          var tabs = document.querySelectorAll("main button");
+          for (var j = 0; j < tabs.length; j++) {
+            if ((tabs[j].textContent || "").trim() === todo.navRange) {
+              tabs[j].click();
+              break;
+            }
+          }
+        }
+        /* 高亮包含目标姓名的条目 */
+        if (todo.navName) {
+          setTimeout(function () {
+            var main = document.querySelector("main") || document.body;
+            var all = main.querySelectorAll("button, li, tr, div");
+            for (var k = all.length - 1; k >= 0; k--) {
+              var node = all[k];
+              if (
+                node.children.length <= 4 &&
+                (node.textContent || "").indexOf(todo.navName) >= 0 &&
+                (node.textContent || "").length < 120
+              ) {
+                node.scrollIntoView({ block: "center", behavior: "smooth" });
+                var prev = node.style.cssText;
+                node.style.cssText += ";outline:2px solid #f59e0b;outline-offset:2px;border-radius:8px;";
+                setTimeout(function () {
+                  node.style.cssText = prev;
+                }, 4000);
+                break;
+              }
+            }
+          }, 600);
+        }
+      }, 700);
     }, 150);
   }
 
@@ -450,7 +485,7 @@
           );
           navBtn.type = "button";
           navBtn.addEventListener("click", function () {
-            goTo(todo.nav);
+            goTo(todo);
           });
           row.appendChild(navBtn);
         }
