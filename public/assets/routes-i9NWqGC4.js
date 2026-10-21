@@ -31459,34 +31459,24 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
       if (__isSuperName(x, a)) return void Z.error(`不能转交给超级管理员`);
       if (e.owner === x) return void Z.error(`客户已经在这位顾问名下`);
       if (!e.owner) return void Z.error(`未分配的客户不能转交，请先由专人分配`);
+      if (v(e)) return void Z.error(`这位客户已有进行中的转交，请等对方处理`);
       O(async () => {
         (await o(`transfers`, {
           lead_id: e.id,
           from: e.owner || `未分配`,
           to: x,
           reason: d.trim(),
-          status: `已转交`,
+          status: `待接收`,
           direct: !0,
           by: n,
-          accepted_at: new Date().toISOString(),
         }),
-          await o(
-            `leads`,
-            {
-              owner: x,
-              status: e.status === `待跟进` ? `跟进中` : e.status,
-              note: `${n} 将客户由 ${e.owner || `未分配`} 直接转交给 ${x}`,
-              author: n,
-            },
-            e.id,
-          ),
           await __notify(
             [`@spec`, e.owner, x, n],
-            `「${n}」把「${e.name}」从 ${e.owner ? `「${e.owner}」` : `未分配`} 转给「${x}」`,
+            `「${n}」把「${e.name}」从 ${e.owner ? `「${e.owner}」` : `未分配`} 转给「${x}」，等待「${x}」确认接收`,
             `lead`,
             e.id,
           ));
-      }, `已转交给 ${x}`).then(() => {
+      }, `已发起，等待「${x}」确认接收`).then(() => {
         (b(``), S(``), f(``));
       });
     },
@@ -31731,7 +31721,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
           })
           : (0, L.jsx)(`p`, {
               className: `text-xs text-muted-foreground`,
-              children: `专人可以在左侧勾选客户后直接分配。未获得更改管理员权限时，不能批准顾问的转交申请。`,
+              children: `专人可以在左侧勾选客户后直接分配。未获得日常管理权限时，不能批准顾问的转交申请。`,
             }),
       D.length > 0 &&
         (0, L.jsx)(PF, {
@@ -31745,6 +31735,18 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                   (0, L.jsxs)(`span`, {
                     children: [h(e.lead_id), ` → `, __who(e.to)],
                   }),
+                  e.status === `待审批` &&
+                    (0, L.jsx)(`button`, {
+                      type: `button`,
+                      className: `text-xs font-semibold text-destructive underline`,
+                      disabled: p,
+                      onClick: () =>
+                        O(async () => {
+                          await o(`transfers`, { status: `已撤回`, reviewed_at: new Date().toISOString() }, e.id);
+                          await __notify([`@approver`, e.from, e.to], `「${e.from}」撤回了把「${h(e.lead_id)}」转给「${e.to}」的申请`, `lead`, e.lead_id);
+                        }, `已撤回申请`),
+                      children: `撤回`,
+                    }),
                   (0, L.jsx)(`span`, {
                     className: Y(
                       `font-semibold`,
@@ -31755,7 +31757,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                           : `text-warning`,
                     ),
                     children:
-                      e.status === `待接收` ? `申请已批准，待对方确认接收` : e.status,
+                      e.status === `待接收` ? `已批准，待「${e.to}」确认接收（不能撤回）` : e.status === `接收方拒绝` ? `「${e.to}」已拒收，客户仍在你名下` : e.status,
                   }),
                 ],
               },
@@ -32089,15 +32091,26 @@ function UF({
       if (!ee.length) return void Z.error(`先勾选要分配的客户`);
       nt(
         async () => {
-          (await Pe(`adminAssignLeads`, { ids: ee, owner: e, author: t }),
-            await __notify(
+          let __tr = [];
+          try { __tr = JSON.parse(localStorage.getItem(`admin-demo-db-v3`) || `{}`).transfers || []; } catch {}
+          let __ids = ee.filter((id) => !__tr.some((x) => x.lead_id === id && (x.status === `待接收` || x.status === `待审批`)));
+          if (!__ids.length) throw Error(`勾选的客户都已在等待接收，不能重复分配`);
+          for (let id of __ids) {
+            let l = ke.find((x) => x.id === id);
+            if (l && l.owner === e) continue;
+            await Pe(`adminSave`, {
+              table: `transfers`,
+              values: { lead_id: id, from: (l && l.owner) || `未分配`, to: e, by: t, kind: `assign`, status: `待接收`, reason: `` },
+            });
+          }
+          (await __notify(
               [`@spec`, e],
-              `「${t}」把 ${ee.length} 位客户分给「${e}」`,
+              `「${t}」把 ${__ids.length} 位客户分给「${e}」，等待「${e}」确认接收`,
               `lead`,
               ee.length === 1 ? ee[0] : ``,
             ));
         },
-        `已分配 ${ee.length} 位客户给 ${e}`,
+        `已分配给 ${e}，等待对方确认接收`,
       );
     },
     ot = () => {
@@ -34578,7 +34591,7 @@ function iL() {
       (e) => !e.start || !e.end || e.start > e.end || e.am < 0 || e.pm < 0,
     ),
     m = () => {
-      if (!__quota) return void Z.error(`只有超级管理员和已授予更改管理员权限的专人可以修改预约名额`);
+      if (!__quota) return void Z.error(`只有超级管理员和已授予日常管理权限的专人可以修改预约名额`);
       if (f) {
         Z.error(`有一段时间设置不完整：结束日期不能早于开始日期，人数不能为负`);
         return;
@@ -34619,7 +34632,7 @@ function iL() {
                 className: `mt-1 text-xs text-muted-foreground`,
                 children: __quota
                   ? `上午、下午分开设置人数上限。日期都按北京时间计算。`
-                  : `当前身份只能查看。预约名额只有超级管理员，以及被授予更改管理员权限的专人可以修改。`,
+                  : `当前身份只能查看。预约名额只有超级管理员，以及被授予日常管理权限的专人可以修改。`,
               }),
             ],
           }),
@@ -42205,7 +42218,7 @@ var __PERM_ROWS = [
   [`查看并批准申请`, !0, !1, `grant`],
   [`新增或删除管理员`, !0, !1, `grant`],
   [`删除专人`, !0, !1, !1],
-  [`授予或移除更改管理员权限`, !0, !1, !1],
+  [`授予或移除日常管理权限（审批申请、管理员账号、预约名额）`, !0, !1, !1],
   [`修改或删除超级管理员`, !1, !1, !1],
   [`修改到校预约/活动管理时间`, !0, !1, `grant`],
   [`修改系统设置中的预约名额`, !0, !1, `grant`],
@@ -42434,7 +42447,7 @@ function __Mine({ onClose: onClose }) {
             role === `specialist` &&
               (0, L.jsx)(`p`, {
                 className: `text-xs text-muted-foreground`,
-                children: me.admin_granted ? `已获得更改管理员权限` : `未获得更改管理员权限`,
+                children: me.admin_granted ? `已获得日常管理权限（包含：审批注册、资料修改和客户转交申请，新增或删除管理员，修改预约名额。不含：调整身份级别和查看统计分析。）` : `未获得日常管理权限（获得后可审批注册、资料修改和客户转交申请，新增或删除管理员，修改预约名额。不含：调整身份级别和查看统计分析。）`,
               }),
             (0, L.jsxs)(`p`, { children: [`当前姓名：`, me.name || ``] }),
             (0, L.jsxs)(`p`, { children: [`当前邮箱：`, me.account || ``] }),
@@ -42587,7 +42600,7 @@ function __ProfileQueue() {
           }),
           (0, L.jsx)(`p`, {
             className: `mt-1 text-xs text-muted-foreground`,
-            children: `已获更改管理员权限的专人在这里批准。申请人收到通过消息后，资料才算改完。`,
+            children: `已获日常管理权限的专人在这里批准。申请人收到通过消息后，资料才算改完。`,
           }),
         ],
       }),
@@ -43118,7 +43131,7 @@ function __ApprovalPage({ focusId: focusId, reviewer: reviewer, account: account
     children: [
       (0, L.jsx)(_P, {
         title: `待处理申请`,
-        desc: `信息和转交分开处理。只有超级管理员和已获得更改管理员权限的专人可以查看和批准。处理过的记录在「申请记录」。`,
+        desc: `信息和转交分开处理。只有超级管理员和已获得日常管理权限的专人可以查看和批准。处理过的记录在「申请记录」。`,
       }),
       (0, L.jsxs)(`div`, {
         className: `flex gap-2`,
@@ -43276,7 +43289,7 @@ function __PermPage({ currentId: e }) {
           ),
           await i(),
           await r.invalidateQueries({ queryKey: EP }),
-          Z.success(t ? `已授予更改管理员权限，已通知所有人` : `已移除更改管理员权限，已通知所有人`));
+          Z.success(t ? `已授予日常管理权限，已通知「${e.name}」` : `已移除日常管理权限，已通知「${e.name}」`));
       } catch (e) {
         Z.error(e instanceof Error ? e.message : `操作失败`);
       }
@@ -43473,7 +43486,7 @@ function __PermPage({ currentId: e }) {
                               t.admin_granted &&
                               (0, L.jsx)(`span`, {
                                 className: `rounded bg-positive-soft px-1.5 py-0.5 text-[11px] text-positive`,
-                                children: `+ 更改管理员权限`,
+                                children: `+ 日常管理权限`,
                               }),
                           ],
                         }),
@@ -43518,7 +43531,8 @@ function __PermPage({ currentId: e }) {
                                 size: `sm`,
                                 variant: t.admin_granted ? `outline` : `default`,
                                 onClick: () => g(t, !t.admin_granted),
-                                children: t.admin_granted ? `移除更改管理员权限` : `授予更改管理员权限`,
+                                title: `包含：审批注册、资料修改和客户转交申请，新增或删除管理员，修改预约名额。不含：调整身份级别和查看统计分析。`,
+                                children: t.admin_granted ? `移除日常管理权限` : `授予日常管理权限`,
                               }),
                             t.account !== e &&
                               ((n === `advisor` &&
@@ -43769,11 +43783,11 @@ function __PermPage({ currentId: e }) {
             className: `mt-4 space-y-3`,
             children: [
               [`客户被直接转交`, `全部都能看到`, `转出或接收的人是自己`, `全部都能看到`],
-              [`客户转交申请`, `在「待处理申请」里看到并批准。申请只能由管理员提交，接收人也只能是管理员`, `自己提交的、转给其他管理员的申请`, `获得更改管理员权限后，在「待处理申请」里看到并批准`],
+              [`客户转交申请`, `在「待处理申请」里看到并批准。申请只能由管理员提交，接收人也只能是管理员`, `自己提交的、转给其他管理员的申请`, `获得日常管理权限后，在「待处理申请」里看到并批准`],
               [`请确认接收`, `看不到`, `接收人是自己`, `看不到`],
-              [`转交结果`, `看不到`, `自己参与的结果`, `看不到`],
-              [`客户分配`, `每一次分配`, `分给自己的`, `每一次分配`],
-              [`注册申请`, `在「待处理申请」里看到并批准`, `看不到`, `获得更改管理员权限后，在「待处理申请」里看到并批准`],
+              [`转交结果`, `看不到`, `自己参与的结果；被拒收时进入待办，客户仍在自己名下`, `看不到`],
+              [`客户分配`, `每一次分配`, `分给自己的，需在待办里确认接收后才正式归入名下`, `每一次分配；被拒收时进入待办`],
+              [`注册申请`, `在「待处理申请」里看到并批准`, `看不到`, `获得日常管理权限后，在「待处理申请」里看到并批准`],
               [
                 `自己的资料变动`,
                 `自己改了姓名、邮箱或密码时能看到。只写改过的项目。密码只写已更改，不写新旧密码。不发给别人。`,
@@ -43784,9 +43798,9 @@ function __PermPage({ currentId: e }) {
                 `姓名或邮箱申请`,
                 `在「待处理申请」里看到并批准。只写对方要改的那一项。自己改自己的姓名或邮箱，不通知别人。`,
                 `能看到自己提交的申请和批准结果。只写改过的项目，同时发给已获授权的专人。`,
-                `获得更改管理员权限后，在「待处理申请」里看到并批准。自己的姓名和邮箱直接保存，只通知自己，只写改过的项目。`,
+                `获得日常管理权限后，在「待处理申请」里看到并批准。自己的姓名和邮箱直接保存，只通知自己，只写改过的项目。`,
               ],
-              [`到校预约`, `看不到`, `看不到`, `待确认的预约`],
+              [`到校预约`, `看不到`, `看不到`, `所有专人都能处理（不论是否有日常管理权限）：今天、明天和待确认的预约进入待办`],
               [`活动提醒`, `即将开始的活动`, `即将开始的活动`, `即将开始的活动`],
             ].map(([e, t, n, r]) =>
               (0, L.jsxs)(

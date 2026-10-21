@@ -13,7 +13,7 @@
     transfer: { bg: "#eff6ff", fg: "#1d4ed8", border: "#bfdbfe", label: "客户流转" },
     booking: { bg: "#fff7ed", fg: "#c2410c", border: "#fed7aa", label: "到校预约" },
     event: { bg: "#f5f3ff", fg: "#6d28d9", border: "#ddd6fe", label: "活动日程" },
-    account: { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca", label: "账号审批" },
+    account: { bg: "#fef2f2", fg: "#b91c1c", border: "#fecaca", label: "审批事项" },
     done: { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", label: "已办结" },
   };
 
@@ -149,30 +149,53 @@
         });
     }
 
-    if (session.role === "advisor") {
+    var dismissed = getDismissed(session);
+    {
       (data.transfers || [])
         .filter(function (t) { return t.status === "待接收" && t.to === myName; })
         .forEach(function (t) {
+          var isAssign = t.kind === "assign" || t.from === "未分配";
+          var src = t.by && t.by !== t.from ? q(t.by, myName) : q(t.from, myName);
           todos.push({
             id: "recv-" + t.id,
             goId: t.lead_id,
             cat: "transfer",
-            tag: "待接收",
+            tag: isAssign ? "新客户待接收" : "待接收",
             nav: "工作台",
-            text:
-              q(t.from, myName) + " 申请将客户 " + q(leadName(t.lead_id), myName) +
-              " 转交给「你」，确认后正式归入你的名下",
+            text: isAssign
+              ? src + " 把新客户 " + q(leadName(t.lead_id), myName) + " 分配给「你」，确认接收后正式归入你的名下"
+              : src + " 把客户 " + q(leadName(t.lead_id), myName) + " 从 " + q(t.from, myName) +
+                " 名下转交给「你」，确认接收后正式归入你的名下",
             actions: [
               { label: "确认接收", kind: "acceptTransfer", ref: t.id, primary: true },
               { label: "拒绝", kind: "declineTransfer", ref: t.id },
             ],
           });
         });
+      /* 被拒收：通知发起人（转出人或分配人），客户仍在原处 */
+      (data.transfers || [])
+        .filter(function (t) {
+          var owner = t.from === "未分配" || t.kind === "assign" ? t.by : t.from;
+          return t.status === "接收方拒绝" && owner === myName && dismissed.indexOf("bounce-" + t.id) < 0;
+        })
+        .forEach(function (t) {
+          var unassigned = t.from === "未分配";
+          todos.push({
+            id: "bounce-" + t.id,
+            goId: t.lead_id,
+            cat: "transfer",
+            tag: "转交被拒",
+            nav: "工作台",
+            text:
+              q(t.to, myName) + " 拒绝接收客户 " + q(leadName(t.lead_id), myName) +
+              (unassigned ? "，该客户仍为未分配，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
+            actions: [{ label: "知道了", kind: "dismiss", ref: "bounce-" + t.id }],
+          });
+        });
     }
 
-    /* 全员：到校预约（今天/明天，或待确认） */
-    var dismissed = getDismissed(session);
-    (data.bookings || [])
+    /* 到校预约：仅专人处理（不论是否有日常管理权限） */
+    (session.role === "specialist" ? data.bookings || [] : [])
       .filter(function (b) {
         var diff = dayDiff(b.visit_date);
         return (
@@ -308,16 +331,16 @@
           id: tr.lead_id,
           values: {
             owner: tr.to,
-            note: "客户由 " + tr.from + " 转交给 " + tr.to + "（已审批并确认）",
+            note: tr.from === "未分配" ? "客户分配给 " + tr.to + "（已确认接收）" : "客户由 " + tr.from + " 转交给 " + tr.to + "（已确认接收）",
             author: tr.to,
           },
         });
       }
       await notify(
-        [...approverNames, tr.from, tr.to],
+        [...approverNames, tr.from, tr.to, tr.by],
         accept
-          ? "「" + tr.to + "」已接收「" + tr.from + "」转来的「" + leadName(tr.lead_id) + "」"
-          : "「" + tr.to + "」未接收「" + tr.from + "」转来的「" + leadName(tr.lead_id) + "」",
+          ? "「" + tr.to + "」已接收客户「" + leadName(tr.lead_id) + "」"
+          : "「" + tr.to + "」拒绝接收客户「" + leadName(tr.lead_id) + "」" + (tr.from === "未分配" ? "，客户仍为未分配" : "，客户仍在「" + tr.from + "」名下"),
         "lead",
         tr.lead_id
       );
@@ -328,6 +351,7 @@
   var btnEl = null;
   var drawerEl = null;
   var lastSnapshot = "";
+  var activeCat = "all";
 
   function el(tag, style, text) {
     var e = document.createElement(tag);
@@ -472,22 +496,54 @@
     head.appendChild(close);
     panel.appendChild(head);
 
+    /* 按颜色分类筛选 */
+    var bar = el("div", "display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;border-bottom:1px solid #e2e8f0;");
+    var cats = ["all", "transfer", "booking", "event", "account"];
+    cats.forEach(function (cat) {
+      var n = cat === "all" ? todos.length : todos.filter(function (t) { return t.cat === cat; }).length;
+      if (cat !== "all" && n === 0) return;
+      var c = COLORS[cat] || { bg: "#f1f5f9", fg: "#0f172a", border: "#cbd5e1", label: "全部" };
+      var on = activeCat === cat;
+      var f = el(
+        "button",
+        "font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;cursor:pointer;" +
+          "border:1px solid " + c.border + ";" +
+          (on ? "background:" + c.fg + ";color:#fff;" : "background:" + c.bg + ";color:" + c.fg + ";"),
+        (cat === "all" ? "全部" : c.label) + " " + n
+      );
+      f.type = "button";
+      f.addEventListener("click", function () {
+        activeCat = cat;
+        toggleDrawer(false);
+        toggleDrawer(true);
+      });
+      bar.appendChild(f);
+    });
+    panel.appendChild(bar);
+    if (activeCat !== "all" && !todos.some(function (t) { return t.cat === activeCat; })) activeCat = "all";
+    var shown = activeCat === "all" ? todos : todos.filter(function (t) { return t.cat === activeCat; });
+
     var body = el("div", "flex:1;overflow-y:auto;padding:12px 16px;");
-    if (todos.length === 0) {
+    if (shown.length === 0) {
       body.appendChild(
         el("p", "text-align:center;color:#94a3b8;font-size:13px;padding:48px 0;", "暂无待办，所有事项都已处理完毕")
       );
     }
-    todos.forEach(function (todo) {
+    shown.forEach(function (todo) {
       var card = el(
         "div",
-        "border:1px solid " + (COLORS[todo.cat] || COLORS.done).border + ";border-radius:12px;" +
+        "cursor:pointer;border:1px solid " + (COLORS[todo.cat] || COLORS.done).border + ";border-radius:12px;" +
           "padding:12px;margin-bottom:10px;background:" + (COLORS[todo.cat] || COLORS.done).bg + ";"
       );
       var line = el("div", "display:flex;align-items:flex-start;gap:2px;");
       line.appendChild(chip(todo.cat, todo.tag));
       line.appendChild(el("span", "font-size:13px;line-height:1.6;color:#0f172a;", todo.text));
       card.appendChild(line);
+      /* 点击卡片任意位置（按钮除外）跳到对应栏目和具体日期/记录 */
+      card.addEventListener("click", function (ev) {
+        if (ev.target.closest && ev.target.closest("button")) return;
+        goTo(todo);
+      });
       if ((todo.actions && todo.actions.length) || todo.nav) {
         var row = el("div", "display:flex;gap:8px;margin-top:10px;justify-content:flex-end;");
         if (todo.nav) {
