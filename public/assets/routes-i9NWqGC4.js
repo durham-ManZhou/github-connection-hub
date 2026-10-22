@@ -43507,7 +43507,7 @@ function __PermPage({ currentId: e }) {
                         children: (0, L.jsxs)(`div`, {
                           className: `flex flex-wrap gap-2`,
                           children: [
-                            ((__role() === `super_admin` && n !== `super_admin`) || t.account === e) &&
+                            (__role() === `super_admin` && n !== `super_admin`) &&
                               (0, L.jsx)(X, {
                                 size: `sm`,
                                 variant: `outline`,
