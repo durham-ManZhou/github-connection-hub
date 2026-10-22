@@ -42729,7 +42729,7 @@ function __AdvisorHistory({ me: me, account: account }) {
     ],
     shown = rows
       .filter((e) => kind === `全部` || e.kind === kind)
-      .filter((e) => result === `全部` || e.status.startsWith(result))
+      .filter((e) => result === `全部` || (result === `已批准` ? e.status.includes(`已批准`) : result === `驳回` || result === `未通过` ? /驳回|未同意|未通过/.test(e.status) : e.status.startsWith(result)))
       .filter((e) => {
         let day = String(e.at || ``).slice(0, 10);
         return (!start || day >= start) && (!end || day <= end);
