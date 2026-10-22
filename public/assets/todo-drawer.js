@@ -17,6 +17,14 @@
     done: { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", label: "已办结" },
   };
 
+  /* 驳回/拒绝时的常用原因快捷选项 */
+  var REJECT_PRESETS = {
+    rejectReg: ["信息不完整", "非本部门人员"],
+    rejectProfile: ["信息不完整", "不符合规范"],
+    rejectTransfer: ["跟进记录不全", "目标顾问已达负荷", "不符合转交规则", "原顾问继续跟进"],
+    declineTransfer: ["手头客户已饱和", "业务方向不符"],
+  };
+
   function readJSON(storage, key) {
     try {
       var raw = storage.getItem(key);
