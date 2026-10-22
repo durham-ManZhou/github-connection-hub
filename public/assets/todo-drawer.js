@@ -352,7 +352,7 @@
         [...approverNames, tr.from, tr.to, tr.by],
         accept
           ? "「" + tr.to + "」已接收客户「" + leadName(tr.lead_id) + "」"
-          : "「" + tr.to + "」拒绝接收客户「" + leadName(tr.lead_id) + "」" + (tr.from === "未分配" ? "，客户仍为未分配" : "，客户仍在「" + tr.from + "」名下"),
+          : "「" + tr.to + "」拒绝接收客户「" + leadName(tr.lead_id) + "」" + reasonText + (tr.from === "未分配" ? "，客户仍为未分配" : "，客户仍在「" + tr.from + "」名下"),
         "lead",
         tr.lead_id
       );
