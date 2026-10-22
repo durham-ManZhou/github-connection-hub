@@ -298,6 +298,10 @@ function s() {
   }
   let i = (r.profiles ||= []),
     a = !1;
+  for (let row of [...i, ...(r.registrations || [])]) {
+    let k = String(row.account || ``).trim().toLowerCase();
+    row.account !== k && ((row.account = k), (a = !0));
+  }
   let removed = new Set(r._settings?.removedProfiles || []);
   for (let e of c) {
     if (removed.has(e.account)) continue;
@@ -376,6 +380,8 @@ function d(e) {
   localStorage.setItem(t, JSON.stringify(e));
 }
 async function f(e, t) {
+  t && typeof t == `object` && (t = { ...t },
+    [`account`, `accountNew`].forEach((k) => typeof t[k] == `string` && (t[k] = t[k].trim().toLowerCase())));
   let n = s(),
     r = (e) => (n[e] ||= []);
   switch (e) {
