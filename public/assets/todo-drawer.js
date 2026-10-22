@@ -184,7 +184,11 @@
       (data.transfers || [])
         .filter(function (t) {
           var owner = t.from === "未分配" || t.kind === "assign" ? t.by : t.from;
-          return t.status === "接收方拒绝" && owner === myName && dismissed.indexOf("bounce-" + t.id) < 0;
+          if (t.status !== "接收方拒绝" || owner !== myName) return false;
+          /* 完成条件：该客户之后已重新分配或重新发起转交 */
+          return !(data.transfers || []).some(function (x) {
+            return x.id !== t.id && x.lead_id === t.lead_id && String(x.created_at || "") > String(t.accepted_at || t.created_at || "");
+          });
         })
         .forEach(function (t) {
           var unassigned = t.from === "未分配";
@@ -198,7 +202,7 @@
               q(t.to, myName) + " 拒绝接收客户 " + q(leadName(t.lead_id), myName) +
               (t.decline_reason ? "（原因：" + t.decline_reason + "）" : "") +
               (unassigned ? "，该客户仍为未分配，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
-            actions: [{ label: "知道了", kind: "dismiss", ref: "bounce-" + t.id }],
+            actions: [],
           });
         });
     }
@@ -208,8 +212,8 @@
       .filter(function (b) {
         var diff = dayDiff(b.visit_date);
         return (
-          dismissed.indexOf("bk-" + b.id) < 0 &&
-          (diff === 0 || diff === 1 || b.status === "待确认")
+          /* 只有确认或取消后才算完成 */
+          b.status === "待确认" && diff >= 0
         );
       })
       .forEach(function (b) {
@@ -227,7 +231,10 @@
             q(b.name, myName) + " 预约 " + when + (b.slot ? " " + b.slot : "") +
             " 到校咨询（" + (b.people || 1) + " 人）" +
             (b.status === "待确认" ? "，待确认" : ""),
-          actions: [{ label: "知道了", kind: "dismiss", ref: "bk-" + b.id }],
+          actions: [
+            { label: "确认预约", kind: "confirmBooking", ref: b.id, primary: true },
+            { label: "取消预约", kind: "cancelBooking", ref: b.id },
+          ],
         });
       });
 
@@ -235,7 +242,8 @@
     (data.events || [])
       .filter(function (e) {
         var diff = dayDiff(e.starts_at);
-        return dismissed.indexOf("ev-" + e.id) < 0 && diff >= 0 && diff <= 3;
+        /* 活动结束（日期已过）后自动移出 */
+        return diff >= 0 && diff <= 3;
       })
       .forEach(function (e) {
         var diff = dayDiff(e.starts_at);
@@ -248,7 +256,7 @@
           nav: "活动管理",
           navName: e.name,
           text: "活动 " + q(e.name, myName) + " 将于 " + when + " 举行，请关注报名与组织",
-          actions: [{ label: "知道了", kind: "dismiss", ref: "ev-" + e.id }],
+          actions: [],
         });
       });
 
@@ -283,8 +291,13 @@
       });
     };
 
-    if (action.kind === "dismiss") {
-      dismiss(session, action.ref);
+    if (action.kind === "confirmBooking" || action.kind === "cancelBooking") {
+      if (session.role !== "specialist") throw new Error("到校预约只能由专人处理");
+      await cloud("adminSave", {
+        table: "bookings",
+        id: action.ref,
+        values: { status: action.kind === "confirmBooking" ? "已确认" : "已取消" },
+      });
       return;
     }
     var reason = (action.reason || "").trim();
