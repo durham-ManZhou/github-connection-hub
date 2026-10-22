@@ -645,6 +645,14 @@
           b.addEventListener("click", async function () {
             b.disabled = true;
             try {
+              if (REJECT_PRESETS[action.kind]) {
+                var reason = await askReason(action);
+                if (reason === null) {
+                  b.disabled = false;
+                  return;
+                }
+                action.reason = reason;
+              }
               await runAction(session, action);
               if (action.kind === "dismiss") {
                 toggleDrawer(false);
