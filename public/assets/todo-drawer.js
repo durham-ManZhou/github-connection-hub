@@ -17,6 +17,14 @@
     done: { bg: "#ecfdf5", fg: "#047857", border: "#a7f3d0", label: "已办结" },
   };
 
+  /* 驳回/拒绝时的常用原因快捷选项 */
+  var REJECT_PRESETS = {
+    rejectReg: ["信息不完整", "非本部门人员"],
+    rejectProfile: ["信息不完整", "不符合规范"],
+    rejectTransfer: ["跟进记录不全", "目标顾问已达负荷", "不符合转交规则", "原顾问继续跟进"],
+    declineTransfer: ["手头客户已饱和", "业务方向不符"],
+  };
+
   function readJSON(storage, key) {
     try {
       var raw = storage.getItem(key);
@@ -188,6 +196,7 @@
             nav: "工作台",
             text:
               q(t.to, myName) + " 拒绝接收客户 " + q(leadName(t.lead_id), myName) +
+              (t.decline_reason ? "（原因：" + t.decline_reason + "）" : "") +
               (unassigned ? "，该客户仍为未分配，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
             actions: [{ label: "知道了", kind: "dismiss", ref: "bounce-" + t.id }],
           });
@@ -278,6 +287,8 @@
       dismiss(session, action.ref);
       return;
     }
+    var reason = (action.reason || "").trim();
+    var reasonText = reason ? "（原因：" + reason + "）" : "";
     if (action.kind === "approveReg" || action.kind === "rejectReg") {
       await cloud("reviewRegistration", {
         id: action.ref,
@@ -285,14 +296,14 @@
         actor: session.account,
         reviewer: myName,
         role: "advisor",
-        reason: "",
+        reason: reason,
       });
     } else if (action.kind === "approveProfile" || action.kind === "rejectProfile") {
       await cloud("reviewProfileChange", {
         id: action.ref,
         decision: action.kind === "approveProfile" ? "approve" : "reject",
         actor: session.account,
-        reason: "",
+        reason: reason,
       });
     } else if (action.kind === "approveTransfer" || action.kind === "rejectTransfer") {
       var t = (data.transfers || []).find(function (x) { return x.id === action.ref; });
@@ -303,13 +314,13 @@
         id: t.id,
         values: approve
           ? { status: "待接收", reviewed_at: new Date().toISOString(), reviewer: myName }
-          : { status: "已驳回", reviewed_at: new Date().toISOString(), reviewer: myName, reject_reason: "" },
+          : { status: "已驳回", reviewed_at: new Date().toISOString(), reviewer: myName, reject_reason: reason },
       });
       await notify(
         [...approverNames, t.from, t.to],
         approve
           ? "「" + myName + "」同意「" + t.from + "」把「" + leadName(t.lead_id) + "」转给「" + t.to + "」"
-          : "「" + myName + "」驳回了「" + t.from + "」把「" + leadName(t.lead_id) + "」转给「" + t.to + "」的申请",
+          : "「" + myName + "」驳回了「" + t.from + "」把「" + leadName(t.lead_id) + "」转给「" + t.to + "」的申请" + reasonText,
         "lead",
         t.lead_id
       );
@@ -323,6 +334,7 @@
         values: {
           status: accept ? "已转交" : "接收方拒绝",
           accepted_at: new Date().toISOString(),
+          decline_reason: accept ? "" : reason,
         },
       });
       if (accept) {
@@ -340,11 +352,72 @@
         [...approverNames, tr.from, tr.to, tr.by],
         accept
           ? "「" + tr.to + "」已接收客户「" + leadName(tr.lead_id) + "」"
-          : "「" + tr.to + "」拒绝接收客户「" + leadName(tr.lead_id) + "」" + (tr.from === "未分配" ? "，客户仍为未分配" : "，客户仍在「" + tr.from + "」名下"),
+          : "「" + tr.to + "」拒绝接收客户「" + leadName(tr.lead_id) + "」" + reasonText + (tr.from === "未分配" ? "，客户仍为未分配" : "，客户仍在「" + tr.from + "」名下"),
         "lead",
         tr.lead_id
       );
     }
+  }
+
+  /* 驳回/拒绝意见弹窗：常用原因快捷选项 + 可自由填写，取消返回 null */
+  function askReason(action) {
+    return new Promise(function (resolve) {
+      var presets = REJECT_PRESETS[action.kind] || [];
+      var overlay = el(
+        "div",
+        "position:fixed;inset:0;z-index:10001;background:rgba(15,23,42,0.45);display:grid;place-items:center;"
+      );
+      var box = el(
+        "div",
+        "width:340px;max-width:90vw;background:#fff;border-radius:14px;padding:18px;" +
+          "box-shadow:0 16px 48px rgba(15,23,42,0.25);"
+      );
+      box.appendChild(el("div", "font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px;", action.label + "意见"));
+      box.appendChild(el("div", "font-size:12px;color:#64748b;margin-bottom:10px;", "可点选常用原因，或自行填写（可选）"));
+      var chipsRow = el("div", "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;");
+      var input = el(
+        "textarea",
+        "width:100%;min-height:64px;font-size:13px;padding:8px;border:1px solid #cbd5e1;" +
+          "border-radius:8px;resize:vertical;box-sizing:border-box;font-family:inherit;"
+      );
+      input.placeholder = "填写" + action.label + "原因…";
+      presets.forEach(function (p) {
+        var c = el(
+          "button",
+          "font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid #cbd5e1;" +
+            "background:#f8fafc;color:#334155;cursor:pointer;",
+          p
+        );
+        c.type = "button";
+        c.addEventListener("click", function () { input.value = p; });
+        chipsRow.appendChild(c);
+      });
+      box.appendChild(chipsRow);
+      box.appendChild(input);
+      var btns = el("div", "display:flex;justify-content:flex-end;gap:8px;margin-top:12px;");
+      var cancel = el(
+        "button",
+        "font-size:13px;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer;",
+        "取消"
+      );
+      var ok = el(
+        "button",
+        "font-size:13px;font-weight:600;padding:6px 14px;border-radius:8px;border:1px solid #b91c1c;background:#b91c1c;color:#fff;cursor:pointer;",
+        "确认" + action.label
+      );
+      cancel.type = "button";
+      ok.type = "button";
+      function done(v) { overlay.remove(); resolve(v); }
+      cancel.addEventListener("click", function () { done(null); });
+      ok.addEventListener("click", function () { done(input.value.trim()); });
+      overlay.addEventListener("click", function (ev) { if (ev.target === overlay) done(null); });
+      btns.appendChild(cancel);
+      btns.appendChild(ok);
+      box.appendChild(btns);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      input.focus();
+    });
   }
 
   /* ---------- UI ---------- */
@@ -572,6 +645,14 @@
           b.addEventListener("click", async function () {
             b.disabled = true;
             try {
+              if (REJECT_PRESETS[action.kind]) {
+                var reason = await askReason(action);
+                if (reason === null) {
+                  b.disabled = false;
+                  return;
+                }
+                action.reason = reason;
+              }
               await runAction(session, action);
               if (action.kind === "dismiss") {
                 toggleDrawer(false);
