@@ -31889,10 +31889,7 @@ function UF({
     },
     Fe = (0, I.useMemo)(
       () => [
-        ...new Set([
-          ...__staff.filter((e) => e.role !== `super_admin`).map((e) => e.name),
-          ...ke.map((e) => e.owner).filter((e) => e && !__isSuperName(e, __staff)),
-        ]),
+        ...new Set(__staff.filter((e) => (e.role || `advisor`) === `advisor`).map((e) => e.name)),
       ],
       [__staff, ke],
     ),
