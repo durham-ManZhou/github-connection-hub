@@ -359,6 +359,67 @@
     }
   }
 
+  /* 驳回/拒绝意见弹窗：常用原因快捷选项 + 可自由填写，取消返回 null */
+  function askReason(action) {
+    return new Promise(function (resolve) {
+      var presets = REJECT_PRESETS[action.kind] || [];
+      var overlay = el(
+        "div",
+        "position:fixed;inset:0;z-index:10001;background:rgba(15,23,42,0.45);display:grid;place-items:center;"
+      );
+      var box = el(
+        "div",
+        "width:340px;max-width:90vw;background:#fff;border-radius:14px;padding:18px;" +
+          "box-shadow:0 16px 48px rgba(15,23,42,0.25);"
+      );
+      box.appendChild(el("div", "font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px;", action.label + "意见"));
+      box.appendChild(el("div", "font-size:12px;color:#64748b;margin-bottom:10px;", "可点选常用原因，或自行填写（可选）"));
+      var chipsRow = el("div", "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;");
+      var input = el(
+        "textarea",
+        "width:100%;min-height:64px;font-size:13px;padding:8px;border:1px solid #cbd5e1;" +
+          "border-radius:8px;resize:vertical;box-sizing:border-box;font-family:inherit;"
+      );
+      input.placeholder = "填写" + action.label + "原因…";
+      presets.forEach(function (p) {
+        var c = el(
+          "button",
+          "font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid #cbd5e1;" +
+            "background:#f8fafc;color:#334155;cursor:pointer;",
+          p
+        );
+        c.type = "button";
+        c.addEventListener("click", function () { input.value = p; });
+        chipsRow.appendChild(c);
+      });
+      box.appendChild(chipsRow);
+      box.appendChild(input);
+      var btns = el("div", "display:flex;justify-content:flex-end;gap:8px;margin-top:12px;");
+      var cancel = el(
+        "button",
+        "font-size:13px;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#334155;cursor:pointer;",
+        "取消"
+      );
+      var ok = el(
+        "button",
+        "font-size:13px;font-weight:600;padding:6px 14px;border-radius:8px;border:1px solid #b91c1c;background:#b91c1c;color:#fff;cursor:pointer;",
+        "确认" + action.label
+      );
+      cancel.type = "button";
+      ok.type = "button";
+      function done(v) { overlay.remove(); resolve(v); }
+      cancel.addEventListener("click", function () { done(null); });
+      ok.addEventListener("click", function () { done(input.value.trim()); });
+      overlay.addEventListener("click", function (ev) { if (ev.target === overlay) done(null); });
+      btns.appendChild(cancel);
+      btns.appendChild(ok);
+      box.appendChild(btns);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      input.focus();
+    });
+  }
+
   /* ---------- UI ---------- */
   var btnEl = null;
   var drawerEl = null;
