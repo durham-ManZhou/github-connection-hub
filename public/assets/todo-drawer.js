@@ -287,6 +287,8 @@
       dismiss(session, action.ref);
       return;
     }
+    var reason = (action.reason || "").trim();
+    var reasonText = reason ? "（原因：" + reason + "）" : "";
     if (action.kind === "approveReg" || action.kind === "rejectReg") {
       await cloud("reviewRegistration", {
         id: action.ref,
@@ -294,14 +296,14 @@
         actor: session.account,
         reviewer: myName,
         role: "advisor",
-        reason: "",
+        reason: reason,
       });
     } else if (action.kind === "approveProfile" || action.kind === "rejectProfile") {
       await cloud("reviewProfileChange", {
         id: action.ref,
         decision: action.kind === "approveProfile" ? "approve" : "reject",
         actor: session.account,
-        reason: "",
+        reason: reason,
       });
     } else if (action.kind === "approveTransfer" || action.kind === "rejectTransfer") {
       var t = (data.transfers || []).find(function (x) { return x.id === action.ref; });
@@ -312,13 +314,13 @@
         id: t.id,
         values: approve
           ? { status: "待接收", reviewed_at: new Date().toISOString(), reviewer: myName }
-          : { status: "已驳回", reviewed_at: new Date().toISOString(), reviewer: myName, reject_reason: "" },
+          : { status: "已驳回", reviewed_at: new Date().toISOString(), reviewer: myName, reject_reason: reason },
       });
       await notify(
         [...approverNames, t.from, t.to],
         approve
           ? "「" + myName + "」同意「" + t.from + "」把「" + leadName(t.lead_id) + "」转给「" + t.to + "」"
-          : "「" + myName + "」驳回了「" + t.from + "」把「" + leadName(t.lead_id) + "」转给「" + t.to + "」的申请",
+          : "「" + myName + "」驳回了「" + t.from + "」把「" + leadName(t.lead_id) + "」转给「" + t.to + "」的申请" + reasonText,
         "lead",
         t.lead_id
       );
@@ -332,6 +334,7 @@
         values: {
           status: accept ? "已转交" : "接收方拒绝",
           accepted_at: new Date().toISOString(),
+          decline_reason: accept ? "" : reason,
         },
       });
       if (accept) {
