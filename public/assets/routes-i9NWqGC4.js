@@ -40890,7 +40890,7 @@ var eR = [
   { name: `申请记录`, icon: ft },
   { name: `待处理申请`, icon: wt },
   { name: `审批记录`, icon: wt },
-  { name: `权限管理`, icon: wt, superOnly: !0 },
+  { name: `权限管理`, icon: wt },
   { name: `系统设置`, icon: Ct },
 ];
 function tR() {
@@ -41086,7 +41086,7 @@ function iR({ userId: e, name: t, isSuper: n }) {
     C = eR.filter(
       (e) =>
         (e.name !== `统计分析` || __role() === `super_admin`) &&
-        (e.name !== `权限管理` || __role() === `super_admin`) &&
+        (e.name !== `权限管理` || __canManageAccounts()) &&
         (e.name !== `待处理申请` || __canManageAccounts()) &&
         (e.name !== `审批记录` || __canManageAccounts()) &&
         (e.name !== `申请记录` || __role() === `advisor`),
@@ -41373,7 +41373,7 @@ function iR({ userId: e, name: t, isSuper: n }) {
                   __canManageAccounts() &&
                   (0, L.jsx)(__ReviewHistory, { me: t }),
                 i === `权限管理` &&
-                  __role() === `super_admin` &&
+                  __canManageAccounts() &&
                   (0, L.jsx)(nL, { currentId: e }),
                 i === `待处理申请` &&
                   __canManageAccounts() &&
@@ -43310,7 +43310,7 @@ function __PermPage({ currentId: e }) {
     children: [
       (0, L.jsx)(_P, {
         title: `权限管理`,
-        desc: `超级管理员只能修改专人和管理员的身份级别。姓名、邮箱和密码都由本人在「我的」里处理：改密码必须先填旧密码。所有申请都在左侧「待处理申请」里处理。`,
+        desc: __role() === `super_admin` ? `超级管理员只能修改专人和管理员的身份级别。姓名、邮箱和密码都由本人在「我的」里处理：改密码必须先填旧密码。所有申请都在左侧「待处理申请」里处理。` : `你已获得日常管理权限：可以新增和删除管理员账号。不能修改任何人的身份级别，不能新增或删除专人、超级管理员，也不能授予或移除日常管理权限。超级管理员移除你的日常管理权限后，这个栏目会自动隐藏。`,
         action:
           !a &&
           (0, L.jsxs)(X, {
@@ -43507,8 +43507,7 @@ function __PermPage({ currentId: e }) {
                         children: (0, L.jsxs)(`div`, {
                           className: `flex flex-wrap gap-2`,
                           children: [
-                            ((__role() === `super_admin` && n !== `super_admin`) ||
-                              (__role() === `specialist` && n === `advisor`)) &&
+                            ((__role() === `super_admin` && n !== `super_admin`) || t.account === e) &&
                               (0, L.jsx)(X, {
                                 size: `sm`,
                                 variant: `outline`,
