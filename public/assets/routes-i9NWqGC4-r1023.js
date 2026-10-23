@@ -30885,8 +30885,15 @@ function DF({ lead: e, author: t, onClose: n }) {
         if (e.__new) {
           if (!u.name.trim()) return void Z.error(`请填写客户姓名`);
           if (!u.phone.trim() && !u.wechat.trim()) return void Z.error(`电话和微信号至少填一项`);
-          await i(`leads`, { ...u, name: u.name.trim(), note: f.trim(), author: t, created_at: new Date().toISOString() });
-          Z.success(u.owner ? `已新增客户「${u.name.trim()}」，负责顾问「${u.owner}」` : `已新增客户「${u.name.trim()}」，已放入未分配`);
+          let __to = (u.owner || ``).trim(),
+            __nm = u.name.trim(),
+            __lid = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : `lead-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          await i(`leads`, { ...u, owner: ``, name: __nm, note: f.trim(), author: t, created_at: new Date().toISOString() }, __lid);
+          if (__to) {
+            await Pe(`adminSave`, { table: `transfers`, values: { lead_id: __lid, from: `未分配`, to: __to, by: t, kind: `assign`, status: `待接收`, reason: `` } });
+            await __notify([`@spec`, __to], `「${t}」新增客户「${__nm}」并分给「${__to}」，等待「${__to}」确认接收`, `lead`, __lid);
+          }
+          Z.success(__to ? `已新增客户「${__nm}」，等待「${__to}」确认接收` : `已新增客户「${__nm}」，已放入未分配`);
           n();
           return;
         }
