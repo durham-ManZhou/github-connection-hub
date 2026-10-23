@@ -30958,7 +30958,7 @@ function DF({ lead: e, author: t, onClose: n }) {
                   }),
                   (0, L.jsx)($, {
                     label: `微信号`,
-                    hint: `小程序登录时自动获取`,
+                    hint: e.__new ? `手动填写（小程序异常或客户经其他渠道进入时使用）` : `小程序登录时自动获取`,
                     children: (0, L.jsx)(`input`, {
                       className: Q,
                       value: u.wechat,
@@ -42228,7 +42228,7 @@ function __Unmerge({ lead: e, author: t }) {
   let { data: n = [] } = kP(`leads`),
     r = p(),
     [i, a] = (0, I.useState)(!1),
-    o = n.filter((t) => t.mergedInto === e.id);
+    o = e && e.id ? n.filter((t) => t.mergedInto === e.id) : [];
   return o.length
     ? (0, L.jsxs)(`div`, {
         className: `flex items-center gap-3 rounded-2xl border border-border bg-muted/40 px-4 py-3 text-sm`,
