@@ -31747,7 +31747,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                   e.status === `待审批` &&
                     (0, L.jsx)(`button`, {
                       type: `button`,
-                      className: `text-xs font-semibold text-destructive underline`,
+                      className: `rounded-full bg-destructive px-4 py-1.5 text-sm font-semibold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:opacity-60`,
                       disabled: p,
                       onClick: () =>
                         O(async () => {
@@ -42943,7 +42943,7 @@ function __AdvisorHistory({ me: me, account: account }) {
                       e.tstatus === `待审批` &&
                         (0, L.jsx)(`button`, {
                           type: `button`,
-                          className: `text-xs font-semibold text-destructive underline`,
+                          className: `rounded-full bg-destructive px-4 py-1.5 text-sm font-semibold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:opacity-60`,
                           onClick: () => __withdraw(e),
                           children: `撤回`,
                         }),
