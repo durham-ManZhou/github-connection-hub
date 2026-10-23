@@ -28131,7 +28131,7 @@ function TP() {
         (0, L.jsxs)(`form`, {
           onSubmit: async (r) => {
             (r.preventDefault(), d(``), p(``));
-            let a = i.trim().toLowerCase();
+            let a = i.trim();
             if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a))
               return d(`请输入有效的邮箱`);
             if (o.length < 6) return d(`密码至少 6 位`);
