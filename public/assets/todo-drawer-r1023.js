@@ -269,7 +269,7 @@
 
   /* 执行待办操作：走与主应用相同的 demoCloud 数据层 */
   async function runAction(session, action) {
-    var mod = await import("/assets/demo-CUN4h6Gz.js");
+    var mod = await import("/assets/demo-CUN4h6Gz-r1023.js");
     var cloud = mod.demoCloud;
     var data = db();
     var myName = session.name || "";
