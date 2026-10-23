@@ -30793,9 +30793,57 @@ function EF(e) {
   return String(e || ``).replace(/\D/g, ``);
 }
 var __NEW_LEAD = { __new: !0 };
+function __OwnerPick({ value: v, onChange: oc, options: opts, allowNone: an, placeholder: ph, className: cn, label: lb }) {
+  let [open, setOpen] = (0, I.useState)(!1),
+    [q, setQ] = (0, I.useState)(``),
+    ref = (0, I.useRef)(null);
+  (0, I.useEffect)(() => {
+    if (!open) return;
+    let h = (e) => { ref.current && !ref.current.contains(e.target) && setOpen(!1); };
+    document.addEventListener(`mousedown`, h);
+    return () => document.removeEventListener(`mousedown`, h);
+  }, [open]);
+  let k = q.trim().toLowerCase(),
+    list = [...(an ? [``] : []), ...opts].filter((o) => !k || (o || `未分配`).toLowerCase().includes(k)),
+    pick = (o) => { oc(o); setOpen(!1); setQ(``); };
+  return (0, L.jsxs)(`div`, {
+    ref, className: `relative`,
+    children: [
+      (0, L.jsxs)(`button`, {
+        type: `button`, "aria-label": lb || `负责顾问`,
+        className: Y(cn, `flex items-center justify-between gap-2 text-left`),
+        onClick: () => setOpen(!open),
+        children: [
+          (0, L.jsx)(`span`, { className: v ? `` : `text-muted-foreground`, children: v || (an ? `未分配` : ph || `选择管理员`) }),
+          (0, L.jsx)(`span`, { className: `text-xs text-muted-foreground`, children: `▾` }),
+        ],
+      }),
+      open && (0, L.jsxs)(`div`, {
+        className: `absolute left-0 right-0 z-[60] mt-1 min-w-48 rounded-2xl border border-border bg-card p-2 shadow-xl`,
+        children: [
+          (0, L.jsx)(`input`, {
+            autoFocus: !0, value: q, onChange: (e) => setQ(e.target.value),
+            placeholder: `输入关键字搜索`, "aria-label": `搜索顾问`,
+            className: `mb-2 h-9 w-full rounded-full border border-input bg-card px-3 text-sm outline-none`,
+          }),
+          (0, L.jsx)(`div`, {
+            className: `max-h-56 overflow-y-auto`,
+            children: list.length ? list.map((o) => (0, L.jsx)(`button`, {
+              type: `button`, onClick: () => pick(o),
+              className: `block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-secondary ${o === v ? `bg-secondary font-semibold text-primary` : ``}`,
+              children: o || `未分配（稍后由专人分配）`,
+            }, o || `__none`)) : (0, L.jsx)(`p`, { className: `px-3 py-2 text-sm text-muted-foreground`, children: `没有匹配的管理员` }),
+          }),
+        ],
+      }),
+    ],
+  });
+}
 function DF({ lead: e, author: t, onClose: n }) {
   let { data: r = [] } = kP(`lead_notes`),
     { save: i, remove: a } = AP(),
+    { data: __pf = [] } = kP(`profiles`),
+    __advs = [...new Set(__pf.filter((x) => (x.role || `advisor`) === `advisor` && x.status !== `停用` && x.status !== `disabled`).map((x) => x.name).filter(Boolean))],
     [o, s] = (0, I.useState)(``),
     [c, l] = (0, I.useState)(``),
     [u, d] = (0, I.useState)(() => wF(e)),
@@ -30837,8 +30885,8 @@ function DF({ lead: e, author: t, onClose: n }) {
         if (e.__new) {
           if (!u.name.trim()) return void Z.error(`请填写客户姓名`);
           if (!u.phone.trim() && !u.wechat.trim()) return void Z.error(`电话和微信号至少填一项`);
-          await i(`leads`, { ...u, owner: ``, note: f.trim(), author: t, created_at: new Date().toISOString() });
-          Z.success(`已新增客户「${u.name.trim()}」，已放入未分配`);
+          await i(`leads`, { ...u, name: u.name.trim(), note: f.trim(), author: t, created_at: new Date().toISOString() });
+          Z.success(u.owner ? `已新增客户「${u.name.trim()}」，负责顾问「${u.owner}」` : `已新增客户「${u.name.trim()}」，已放入未分配`);
           n();
           return;
         }
@@ -30873,7 +30921,7 @@ function DF({ lead: e, author: t, onClose: n }) {
                   }),
                   (0, L.jsxs)(`p`, {
                     className: `text-xs text-muted-foreground`,
-                    children: e.__new ? [`保存后进入未分配，由专人分配`] : [`提交于 `, NP(e.created_at)],
+                    children: e.__new ? [`可直接选择负责顾问，或选「未分配」稍后再分配`] : [`提交于 `, NP(e.created_at)],
                   }),
                 ],
               }),
@@ -30912,10 +30960,10 @@ function DF({ lead: e, author: t, onClose: n }) {
                     label: `微信号`,
                     hint: `小程序登录时自动获取`,
                     children: (0, L.jsx)(`input`, {
-                      className: `${Q} bg-muted`,
+                      className: Q,
                       value: u.wechat,
-                      placeholder: `客户尚未登录小程序`,
-                      readOnly: !0,
+                      placeholder: `可手动填写`,
+                      onChange: (e) => _({ wechat: e.target.value }),
                     }),
                   }),
                   (0, L.jsx)($, {
@@ -30960,10 +31008,12 @@ function DF({ lead: e, author: t, onClose: n }) {
                   }),
                   (0, L.jsx)($, {
                     label: `负责顾问`,
-                    children: (0, L.jsx)(`input`, {
+                    children: (0, L.jsx)(__OwnerPick, {
                       className: Q,
                       value: u.owner,
-                      onChange: (e) => _({ owner: e.target.value }),
+                      options: u.owner && !__advs.includes(u.owner) ? [u.owner, ...__advs] : __advs,
+                      allowNone: !0,
+                      onChange: (e) => _({ owner: e }),
                     }),
                   }),
                   (0, L.jsx)($, {
@@ -31642,16 +31692,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                     ),
                 ],
               }),
-              (0, L.jsxs)(`select`, {
-                "aria-label": `转交给`,
-                className: MF,
-                value: x,
-                onChange: (e) => S(e.target.value),
-                children: [
-                  (0, L.jsx)(`option`, { value: ``, children: `转交给` }),
-                  C.map((e) => (0, L.jsx)(`option`, { value: e, children: __who(e) }, e)),
-                ],
-              }),
+              (0, L.jsx)(__OwnerPick, { label: `转交给`, className: MF, value: x, onChange: S, options: C, placeholder: `转交给` }),
               (0, L.jsx)(`input`, {
                 "aria-label": `转交原因`,
                 className: MF,
@@ -31697,16 +31738,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                   ),
                 ],
               }),
-              (0, L.jsxs)(`select`, {
-                "aria-label": `选择接收顾问`,
-                className: MF,
-                value: l,
-                onChange: (e) => u(e.target.value),
-                children: [
-                  (0, L.jsx)(`option`, { value: ``, children: `转交给` }),
-                  g.map((e) => (0, L.jsx)(`option`, { value: e, children: __who(e) }, e)),
-                ],
-              }),
+              (0, L.jsx)(__OwnerPick, { label: `选择接收顾问`, className: MF, value: l, onChange: u, options: g, placeholder: `转交给` }),
               (0, L.jsx)(`input`, {
                 "aria-label": `转交原因`,
                 className: MF,
@@ -31770,7 +31802,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                               if (__rest.length) await o(`notifications`, { to: __rest }, n0.id);
                               else await __remT(`notifications`, n0.id);
                             }
-                        }, `已撤回申请，审批人和被转交人都不会再看到这条申请`),
+                        }, `已撤回申请，审批人不会再看到这条申请，被转交人会收到撤回通知`),
                       children: `撤回`,
                     }),
                   (0, L.jsx)(`span`, {
@@ -32457,25 +32489,10 @@ function UF({
                       className: `font-semibold text-primary`,
                       children: [`已选 `, ee.length, ` 位`],
                     }),
-                    (0, L.jsx)(`input`, {
-                      list: `advisor-list`,
-                      "aria-label": `分配给顾问`,
-                      value: P,
-                      onChange: (e) => ne(e.target.value),
-                      placeholder: `选择或输入顾问`,
-                      className: `h-9 w-40 rounded-full border border-input bg-card px-4 text-sm`,
-                    }),
-                    (0, L.jsx)(`datalist`, {
-                      id: `advisor-list`,
-                      children: Fe.map((e) => {
-                        let t = __staff.find((t) => t.name === e);
-                        return (0, L.jsx)(
-                          `option`,
-                          { value: e, label: t ? __ROLE_LABEL[t.role] || `管理员` : `` },
-                          e,
-                        );
-                      }),
-                    }),
+                    (0, L.jsx)(`div`, { className: `w-44`, children: (0, L.jsx)(__OwnerPick, {
+                      label: `分配给顾问`, value: P, onChange: ne, options: Fe, placeholder: `选择管理员`,
+                      className: `h-9 w-full rounded-full border border-input bg-card px-4 text-sm`,
+                    }) }),
                     (0, L.jsx)(X, {
                       size: `sm`,
                       onClick: it,
@@ -42794,11 +42811,12 @@ function __AdvisorHistory({ me: me, account: account }) {
             n0.text.indexOf(`申请把`) >= 0 &&
             n0.text.indexOf(`转给「${row.tto}」`) >= 0
           ) {
-            let rest = (n0.to || []).filter((x) => !appr.includes(x) && x !== row.tto);
+            let rest = (n0.to || []).filter((x) => !appr.includes(x) || x === row.tto);
             if (rest.length) await sv0(`notifications`, { to: rest }, n0.id);
             else await rm0(`notifications`, n0.id);
           }
-        Z.success(`已撤回申请，审批人和被转交人都不会再看到这条申请`);
+        await __notify([row.tto], `「${row.tfrom || ``}」撤回了把「${row.tname || ``}」转给「${row.tto}」的申请`, `lead`, row.tref);
+        Z.success(`已撤回申请，已通知「${row.tto}」，审批人不会再看到这条申请`);
       } catch (err) {
         Z.error(err instanceof Error ? err.message : `撤回失败`);
       }
