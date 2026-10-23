@@ -17,3 +17,4 @@
 - Reading files, searching, and inspecting git status do not need that approval.
 - A git commit still needs its own summary and a separate explicit approval. A push, pull request, merge, or other GitHub-side change needs yet another explicit approval. The phrase `同意推送` approves only the previously approved commit.
 - Do not rewrite published history, force-push, or push `main` directly.
+- When changing any file in public/assets, give it a new filename and update every reference (shell + other assets), then regenerate .gz. Why: hosting serves assets with 1-year immutable caching, so same-name edits stay stale in browsers.
