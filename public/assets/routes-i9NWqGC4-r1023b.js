@@ -30897,6 +30897,16 @@ function DF({ lead: e, author: t, onClose: n }) {
           n();
           return;
         }
+        let __old = (e.owner || ``).trim(),
+          __new = (u.owner || ``).trim();
+        if (__new && __new !== __old) {
+          await i(`leads`, { ...u, owner: __old, note: f.trim(), author: t }, e.id);
+          await Pe(`adminSave`, { table: `transfers`, values: { lead_id: e.id, from: __old || `未分配`, to: __new, by: t, kind: __old ? `direct` : `assign`, status: `待接收`, reason: `` } });
+          await __notify([`@spec`, __new, __old].filter(Boolean), __old ? `「${t}」把客户「${e.name}」从「${__old}」名下改给「${__new}」，等待「${__new}」确认接收` : `「${t}」把客户「${e.name}」分给「${__new}」，等待「${__new}」确认接收`, `lead`, e.id);
+          p(``);
+          Z.success(`已提交，等待「${__new}」确认接收`);
+          return;
+        }
         (await i(`leads`, { ...u, note: f.trim(), author: t }, e.id),
           p(``),
           Z.success(`已保存`));
