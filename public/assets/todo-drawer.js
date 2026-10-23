@@ -185,6 +185,8 @@
         .filter(function (t) {
           var owner = t.from === "未分配" || t.kind === "assign" ? t.by : t.from;
           if (t.status !== "接收方拒绝" || owner !== myName) return false;
+          /* 点了「知道了」的退回提醒不再出现 */
+          if (dismissed.indexOf("bounce-" + t.id) >= 0) return false;
           /* 完成条件：该客户之后已重新分配或重新发起转交 */
           return !(data.transfers || []).some(function (x) {
             return x.id !== t.id && x.lead_id === t.lead_id && String(x.created_at || "") > String(t.accepted_at || t.created_at || "");
@@ -202,7 +204,9 @@
               q(t.to, myName) + " 拒绝接收客户 " + q(leadName(t.lead_id), myName) +
               (t.decline_reason ? "（原因：" + t.decline_reason + "）" : "") +
               (unassigned ? "，该客户已重新回到「未分配」列表，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
-            actions: [],
+            actions: [
+              { label: "知道了", kind: "dismiss", ref: "bounce-" + t.id },
+            ],
           });
         });
     }
@@ -291,6 +295,11 @@
       });
     };
 
+    /* 「知道了」：仅用于被拒后的退回提醒，点击后永久移出待办，表示放弃再次操作 */
+    if (action.kind === "dismiss") {
+      dismiss(session, action.ref);
+      return;
+    }
     if (action.kind === "confirmBooking" || action.kind === "cancelBooking") {
       if (session.role !== "specialist") throw new Error("到校预约只能由专人处理");
       await cloud("adminSave", {
