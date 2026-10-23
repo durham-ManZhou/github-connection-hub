@@ -32096,7 +32096,7 @@ function UF({
       .filter((e) => e.late > 0)
       .sort((e, t) => t.late - e.late || t.n - e.n),
     Qe = i ? [] : n.filter((e) => e.view !== `工作台`),
-    $e = ke.find((e) => e.id === se) ?? null,
+    $e = se === `__new` ? { __new: !0 } : ke.find((e) => e.id === se) ?? null,
     et = (e) =>
       te((t) => (t.includes(e) ? t.filter((t) => t !== e) : [...t, e])),
     tt = qe.length > 0 && qe.every((e) => ee.includes(e.id)),
@@ -32245,7 +32245,7 @@ function UF({
           children: [
             __role() !== `advisor` &&
               (0, L.jsx)(X, {
-                onClick: () => ce({ __new: !0 }),
+                onClick: () => ce(`__new`),
                 children: `+ 新增客户`,
               }),
             (0, L.jsxs)(X, {
