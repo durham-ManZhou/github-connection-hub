@@ -31757,11 +31757,11 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                               n0.text.indexOf(`申请把`) >= 0 &&
                               n0.text.indexOf(`转给「${e.to}」`) >= 0
                             ) {
-                              let __rest = (n0.to || []).filter((x) => !__appr.includes(x));
+                              let __rest = (n0.to || []).filter((x) => !__appr.includes(x) && x !== e.to);
                               if (__rest.length) await o(`notifications`, { to: __rest }, n0.id);
                               else await __remT(`notifications`, n0.id);
                             }
-                        }, `已撤回申请，审批人的待办和消息里已移除这条申请`),
+                        }, `已撤回申请，审批人和被转交人都不会再看到这条申请`),
                       children: `撤回`,
                     }),
                   (0, L.jsx)(`span`, {
@@ -42775,11 +42775,11 @@ function __AdvisorHistory({ me: me, account: account }) {
             n0.text.indexOf(`申请把`) >= 0 &&
             n0.text.indexOf(`转给「${row.tto}」`) >= 0
           ) {
-            let rest = (n0.to || []).filter((x) => !appr.includes(x));
+            let rest = (n0.to || []).filter((x) => !appr.includes(x) && x !== row.tto);
             if (rest.length) await sv0(`notifications`, { to: rest }, n0.id);
             else await rm0(`notifications`, n0.id);
           }
-        Z.success(`已撤回申请，审批人的待办和消息里已移除这条申请`);
+        Z.success(`已撤回申请，审批人和被转交人都不会再看到这条申请`);
       } catch (err) {
         Z.error(err instanceof Error ? err.message : `撤回失败`);
       }
@@ -43842,13 +43842,13 @@ function __PermPage({ currentId: e }) {
           (0, L.jsx)(`p`, { className: `font-display text-sm font-bold`, children: `消息谁能看到` }),
           (0, L.jsx)(`p`, {
             className: `mt-1 text-xs text-muted-foreground`,
-            children: `「待办」只放要你动手的事（接收、审批、预约），办完自动消失；只有“被拒收”提醒可点「知道了」移除。「铃铛」记录结果和资料变动。管理员在批准前撤回的申请，审批人的待办、铃铛和审批记录里都不会留下任何痕迹。`,
+            children: `「待办」只放要你动手的事（接收、审批、预约），办完自动消失；只有“被拒收”提醒可点「知道了」移除。「铃铛」记录结果和资料变动。管理员在批准前撤回的申请，审批人和被转交人那里都不会留下任何痕迹（待办、铃铛、审批记录都没有）。`,
           }),
           (0, L.jsx)(`div`, {
             className: `mt-4 space-y-3`,
             children: [
               [`客户被直接转交`, `全部都能看到`, `转出或接收的人是自己`, `全部都能看到`],
-              [`客户转交申请`, `在「待处理申请」里看到并批准。申请只能由管理员提交，接收人也只能是管理员`, `自己提交的申请；批准前可在「申请记录」撤回`, `获得日常管理权限后，在「待处理申请」里看到并批准`],
+              [`客户转交申请`, `在「待处理申请」里看到并批准。申请只能由管理员提交，接收人也只能是管理员`, `自己提交的申请；批准前可在「申请记录」撤回，撤回后被转交人看不到`, `获得日常管理权限后，在「待处理申请」里看到并批准`],
               [`请确认接收`, `看不到`, `接收人是自己`, `看不到`],
               [`转交结果`, `看不到`, `自己参与的结果；被拒收时进入待办，客户仍在自己名下`, `看不到`],
               [`客户分配`, `每一次分配`, `分给自己的，需在待办里确认接收后才正式归入名下`, `每一次分配；被拒收时进入待办`],
