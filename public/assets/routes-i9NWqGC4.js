@@ -42688,6 +42688,9 @@ function __AdvisorHistory({ me: me, account: account }) {
   let { data: transfers = [] } = kP(`transfers`),
     { data: changes = [] } = kP(`profile_changes`),
     { data: leads = [] } = kP(`leads`),
+    { data: notes0 = [] } = kP(`notifications`),
+    { data: people0 = [] } = kP(`profiles`),
+    { save: sv0, remove: rm0 } = AP(),
     [kind, setKind] = (0, I.useState)(`全部`),
     [result, setResult] = (0, I.useState)(`全部`),
     [openFilter, setOpenFilter] = (0, I.useState)(!1),
@@ -42704,6 +42707,10 @@ function __AdvisorHistory({ me: me, account: account }) {
           freshAt: [e.created_at, e.reviewed_at, e.accepted_at].filter(Boolean).sort().at(-1),
           kind: `客户转交`,
           text: `申请把「${leadName(e.lead_id)}」转给「${e.to}」。`,
+          tid: e.id,
+          tstatus: e.status,
+          tref: e.lead_id,
+          tto: e.to,
           status:
             e.status === `待审批`
               ? `待批准`
@@ -42752,6 +42759,31 @@ function __AdvisorHistory({ me: me, account: account }) {
           status: `已完成`,
         })),
     ],
+    __withdraw = async (row) => {
+      try {
+        await sv0(`transfers`, { status: `已撤回`, reviewed_at: new Date().toISOString() }, row.tid);
+        /* 撤回后从审批人的待办和铃铛里抹掉这条申请，不再另发撤回通知 */
+        let appr = people0
+          .filter((x) => x.role === `super_admin` || (x.role === `specialist` && x.admin_granted))
+          .map((x) => x.name);
+        for (let n0 of notes0)
+          if (
+            n0 &&
+            n0.kind === `lead` &&
+            n0.ref === row.tref &&
+            typeof n0.text === `string` &&
+            n0.text.indexOf(`申请把`) >= 0 &&
+            n0.text.indexOf(`转给「${row.tto}」`) >= 0
+          ) {
+            let rest = (n0.to || []).filter((x) => !appr.includes(x));
+            if (rest.length) await sv0(`notifications`, { to: rest }, n0.id);
+            else await rm0(`notifications`, n0.id);
+          }
+        Z.success(`已撤回申请，审批人的待办和消息里已移除这条申请`);
+      } catch (err) {
+        Z.error(err instanceof Error ? err.message : `撤回失败`);
+      }
+    },
     shown = rows
       .filter((e) => kind === `全部` || e.kind === kind)
       .filter((e) => result === `全部` || (result === `已批准` ? e.status.includes(`已批准`) : result === `驳回` || result === `未通过` ? /驳回|未同意|未通过/.test(e.status) : e.status.startsWith(result)))
@@ -42765,7 +42797,7 @@ function __AdvisorHistory({ me: me, account: account }) {
     children: [
       (0, L.jsx)(_P, {
         title: `申请记录`,
-        desc: `这里保留你提交的客户转交，以及姓名、邮箱、密码的修改记录。待批准：还没有人处理。已批准：超级管理员或已获权限的专人已同意，等接收的管理员确认。已通过：姓名或邮箱已经改成。已完成：客户已经转到对方名下，或密码已经改完。驳回、未通过：审批人没有同意，备注里会写是谁驳回。对方未接收：审批人已经同意，但接收的管理员拒绝了，客户没有转走。已取消：专人以前留下的姓名或邮箱申请，后来改为本人直接保存，旧申请不再审批。`,
+        desc: `这里保留你提交的客户转交，以及姓名、邮箱、密码的修改记录。待批准：还没有人处理。已批准：超级管理员或已获权限的专人已同意，等接收的管理员确认。已通过：姓名或邮箱已经改成。已完成：客户已经转到对方名下，或密码已经改完。驳回、未通过：审批人没有同意，备注里会写是谁驳回。对方未接收：审批人已经同意，但接收的管理员拒绝了，客户没有转走。已取消：专人以前留下的姓名或邮箱申请，后来改为本人直接保存，旧申请不再审批。已撤回：审批人还没有处理前，你主动取消了申请；撤回后审批人的待办和铃铛消息里都不会再看到这条申请。`,
       }),
       (0, L.jsxs)(`div`, {
         className: `flex flex-wrap items-center gap-2`,
@@ -42807,7 +42839,7 @@ function __AdvisorHistory({ me: me, account: account }) {
                       children: `全部结果`,
                     }),
                     [
-                      [`客户转交`, [`待批准`, `已批准`, `已完成`, `驳回`, `对方未接收`]],
+                      [`客户转交`, [`待批准`, `已批准`, `已完成`, `驳回`, `对方未接收`, `已撤回`]],
                       [`信息修改`, [`待批准`, `已通过`, `已完成`, `未通过`, `已取消`]],
                     ].map(([name, items]) =>
                       (0, L.jsxs)(
@@ -42890,6 +42922,13 @@ function __AdvisorHistory({ me: me, account: account }) {
                       String(e.freshAt || ``) > seenAt && (0, L.jsx)(__NewMark, {}),
                       (0, L.jsx)(`span`, { className: `min-w-40 flex-1`, children: e.text }),
                       (0, L.jsx)(`span`, { className: `text-xs text-muted-foreground`, children: NP(e.at) }),
+                      e.tstatus === `待审批` &&
+                        (0, L.jsx)(`button`, {
+                          type: `button`,
+                          className: `text-xs font-semibold text-destructive underline`,
+                          onClick: () => __withdraw(e),
+                          children: `撤回`,
+                        }),
                       (0, L.jsx)(`span`, {
                         className: `rounded-xl bg-primary px-3 py-1.5 text-base font-semibold text-primary-foreground`,
                         children: e.status,
