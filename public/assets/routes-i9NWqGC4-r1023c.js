@@ -30843,6 +30843,8 @@ function DF({ lead: e, author: t, onClose: n }) {
   let { data: r = [] } = kP(`lead_notes`),
     { save: i, remove: a } = AP(),
     { data: __pf = [] } = kP(`profiles`),
+    { data: __trs = [] } = kP(`transfers`),
+    __pend = e && e.id ? [...__trs].filter((x) => x.lead_id === e.id && x.status === `待接收`).sort((a, b) => String(b.created_at || ``).localeCompare(String(a.created_at || ``)))[0] : null,
     __advs = [...new Set(__pf.filter((x) => (x.role || `advisor`) === `advisor` && x.status !== `停用` && x.status !== `disabled`).map((x) => x.name).filter(Boolean))],
     [o, s] = (0, I.useState)(``),
     [c, l] = (0, I.useState)(``),
@@ -30904,6 +30906,7 @@ function DF({ lead: e, author: t, onClose: n }) {
           await Pe(`adminSave`, { table: `transfers`, values: { lead_id: e.id, from: __old || `未分配`, to: __new, by: t, kind: __old ? `direct` : `assign`, status: `待接收`, reason: `` } });
           await __notify([`@spec`, __new, __old].filter(Boolean), __old ? `「${t}」把客户「${e.name}」从「${__old}」名下改给「${__new}」，等待「${__new}」确认接收` : `「${t}」把客户「${e.name}」分给「${__new}」，等待「${__new}」确认接收`, `lead`, e.id);
           p(``);
+          _({ owner: __old });
           Z.success(`已提交，等待「${__new}」确认接收`);
           return;
         }
@@ -31025,13 +31028,14 @@ function DF({ lead: e, author: t, onClose: n }) {
                   }),
                   (0, L.jsx)($, {
                     label: `负责顾问`,
-                    children: (0, L.jsx)(__OwnerPick, {
+                    children: (0, L.jsxs)(`div`, { children: [(0, L.jsx)(__OwnerPick, {
                       className: Q,
                       value: u.owner,
                       options: u.owner && !__advs.includes(u.owner) ? [u.owner, ...__advs] : __advs,
                       allowNone: !0,
                       onChange: (e) => _({ owner: e }),
                     }),
+                    !e.__new && __pend && (0, L.jsx)(`p`, { className: `mt-1 text-xs font-semibold text-amber-600`, children: `已提交改给「${__pend.to}」，等待对方确认接收；接收前仍由「${__pend.from}」负责` })] }),
                   }),
                   (0, L.jsx)($, {
                     label: `线索等级`,
