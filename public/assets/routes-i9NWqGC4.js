@@ -31761,7 +31761,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                               if (__rest.length) await o(`notifications`, { to: __rest }, n0.id);
                               else await __remT(`notifications`, n0.id);
                             }
-                        }, `已撤回申请，审批人的待办和消息里已移除这条申请`),
+                        }, `已撤回申请，审批人和被转交人都不会再看到这条申请`),
                       children: `撤回`,
                     }),
                   (0, L.jsx)(`span`, {
@@ -42779,7 +42779,7 @@ function __AdvisorHistory({ me: me, account: account }) {
             if (rest.length) await sv0(`notifications`, { to: rest }, n0.id);
             else await rm0(`notifications`, n0.id);
           }
-        Z.success(`已撤回申请，审批人的待办和消息里已移除这条申请`);
+        Z.success(`已撤回申请，审批人和被转交人都不会再看到这条申请`);
       } catch (err) {
         Z.error(err instanceof Error ? err.message : `撤回失败`);
       }
