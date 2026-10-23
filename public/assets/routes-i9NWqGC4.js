@@ -41085,7 +41085,7 @@ function iR({ userId: e, name: t, isSuper: n }) {
       审批记录: __canManageAccounts()
         ? __freshCount(`审批记录-${e}`, [
             ...__transfers
-              .filter((n) => !n.direct && n.status !== `待审批`)
+              .filter((n) => !n.direct && n.status !== `待审批` && n.status !== `已撤回`)
               .map((n) => n.reviewed_at || n.accepted_at || n.created_at),
             ...__changes
               .filter(
@@ -41160,7 +41160,7 @@ function iR({ userId: e, name: t, isSuper: n }) {
           ],
           审批记录: [
             ...__transfers
-              .filter((n) => !n.direct && n.status !== `待审批`)
+              .filter((n) => !n.direct && n.status !== `待审批` && n.status !== `已撤回`)
               .map((n) => n.reviewed_at || n.accepted_at || n.created_at),
             ...__changes
               .filter(
@@ -42243,7 +42243,7 @@ var __PERM_ROWS = [
   [`查看并批准申请`, !0, !1, `grant`],
   [`新增或删除管理员`, !0, !1, `grant`],
   [`删除专人`, !0, !1, !1],
-  [`授予或移除专人的日常管理权限（除修改身份级别、查看统计分析外的日常管理）`, !0, !1, !1],
+  [`授予或移除专人的日常管理权限`, !0, !1, !1],
   [`修改或删除超级管理员`, !1, !1, !1],
   [`修改到校预约/活动管理时间`, !0, !1, `grant`],
   [`修改系统设置中的预约名额`, !0, !1, `grant`],
@@ -42255,7 +42255,7 @@ var __PERM_ROWS = [
   [`直接转交客户（无需审批，接收人确认后生效）`, !0, !1, !1],
   [`批准顾问的转交申请`, !0, !1, `grant`],
   [`申请把自己名下的客户转交给其他管理员（未分配客户不能转交）`, !1, !0, !1],
-  [`撤回自己的转交申请（仅限批准前）`, !1, !0, !1],
+  [`撤回自己的转交申请（批准前可撤，撤回后审批人看不到）`, !1, !0, !1],
 ];
 function __RegQueue({ reviewer: e }) {
   let { data: t = [] } = kP(`registrations`),
@@ -42961,7 +42961,7 @@ function __ReviewHistory({ me: me }) {
     leadName = (e) => leads.find((t) => t.id === e)?.name || `客户`,
     rows = [
       ...transfers
-        .filter((e) => !e.direct && e.status !== `待审批`)
+        .filter((e) => !e.direct && e.status !== `待审批` && e.status !== `已撤回`)
         .map((e) => ({
           id: `t${e.id}`,
           at: e.reviewed_at || e.accepted_at || e.created_at,
@@ -43800,7 +43800,7 @@ function __PermPage({ currentId: e }) {
               (0, L.jsx)(`p`, { className: `font-display text-sm font-bold`, children: `各身份权限一览` }),
               (0, L.jsx)(`p`, {
                 className: `mt-1 text-xs text-muted-foreground`,
-                children: `超级管理员：统管全局，负责身份级别、统计分析和授权。专人：负责客户分配和到校预约；获得「日常管理权限」后，还能审批申请、管理管理员账号、调整预约名额。管理员（顾问）：只跟进自己名下的客户，可申请转交。所有人改密码都要先填旧密码。`,
+                children: `超级管理员：统管全局，独有身份调整、统计分析和授权。专人：分配客户、处理到校预约；获「日常管理权限」后还能审批申请、增删管理员、改预约名额。管理员（顾问）：只管自己名下客户，可申请转交给其他管理员。改密码都要先填旧密码。`,
               }),
             ],
           }),
@@ -43842,13 +43842,13 @@ function __PermPage({ currentId: e }) {
           (0, L.jsx)(`p`, { className: `font-display text-sm font-bold`, children: `消息谁能看到` }),
           (0, L.jsx)(`p`, {
             className: `mt-1 text-xs text-muted-foreground`,
-            children: `需要你动手处理的事（接收、审批、预约跟进）会进入右上角「待办」，处理完自动移出；处理结果和资料变动只发到铃铛消息里留作记录。下面每一块是一类事情，三行分别说明三个身份会收到什么。`,
+            children: `「待办」只放要你动手的事（接收、审批、预约），办完自动消失；只有“被拒收”提醒可点「知道了」移除。「铃铛」记录结果和资料变动。管理员在批准前撤回的申请，审批人的待办、铃铛和审批记录里都不会留下任何痕迹。`,
           }),
           (0, L.jsx)(`div`, {
             className: `mt-4 space-y-3`,
             children: [
               [`客户被直接转交`, `全部都能看到`, `转出或接收的人是自己`, `全部都能看到`],
-              [`客户转交申请`, `在「待处理申请」里看到并批准。申请只能由管理员提交，接收人也只能是管理员`, `自己提交的、转给其他管理员的申请`, `获得日常管理权限后，在「待处理申请」里看到并批准`],
+              [`客户转交申请`, `在「待处理申请」里看到并批准。申请只能由管理员提交，接收人也只能是管理员`, `自己提交的申请；批准前可在「申请记录」撤回`, `获得日常管理权限后，在「待处理申请」里看到并批准`],
               [`请确认接收`, `看不到`, `接收人是自己`, `看不到`],
               [`转交结果`, `看不到`, `自己参与的结果；被拒收时进入待办，客户仍在自己名下`, `看不到`],
               [`客户分配`, `每一次分配`, `分给自己的，需在待办里确认接收后才正式归入名下`, `每一次分配；被拒收时进入待办`],
