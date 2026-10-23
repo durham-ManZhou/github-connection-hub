@@ -31420,7 +31420,8 @@ var jF = `rounded-3xl border border-white/80 bg-card shadow-[0_10px_30px_-18px_o
 function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTransfer }) {
   let { data: i = [] } = kP(`transfers`),
     { data: a = [] } = kP(`profiles`),
-    { save: o } = AP(),
+    { data: __nt0 = [] } = kP(`notifications`),
+    { save: o, remove: __remT } = AP(),
     [s, c] = (0, I.useState)(``),
     [l, u] = (0, I.useState)(``),
     [d, f] = (0, I.useState)(``),
@@ -31743,8 +31744,24 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                       onClick: () =>
                         O(async () => {
                           await o(`transfers`, { status: `已撤回`, reviewed_at: new Date().toISOString() }, e.id);
-                          await __notify([`@approver`, e.from, e.to], `「${e.from}」撤回了把「${h(e.lead_id)}」转给「${e.to}」的申请`, `lead`, e.lead_id);
-                        }, `已撤回申请`),
+                          /* 撤回后从审批人的铃铛里抹掉原申请消息，不再另发撤回通知 */
+                          let __appr = a
+                            .filter((x) => x.role === `super_admin` || (x.role === `specialist` && x.admin_granted))
+                            .map((x) => x.name);
+                          for (let n0 of __nt0)
+                            if (
+                              n0 &&
+                              n0.kind === `lead` &&
+                              n0.ref === e.lead_id &&
+                              typeof n0.text === `string` &&
+                              n0.text.indexOf(`申请把`) >= 0 &&
+                              n0.text.indexOf(`转给「${e.to}」`) >= 0
+                            ) {
+                              let __rest = (n0.to || []).filter((x) => !__appr.includes(x));
+                              if (__rest.length) await o(`notifications`, { to: __rest }, n0.id);
+                              else await __remT(`notifications`, n0.id);
+                            }
+                        }, `已撤回申请，审批人的待办和消息里已移除这条申请`),
                       children: `撤回`,
                     }),
                   (0, L.jsx)(`span`, {
