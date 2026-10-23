@@ -42747,6 +42747,8 @@ function __AdvisorHistory({ me: me, account: account }) {
           tstatus: e.status,
           tref: e.lead_id,
           tto: e.to,
+          tfrom: e.from,
+          tname: leadName(e.lead_id),
           status:
             e.status === `待审批`
               ? `待批准`
