@@ -2,7 +2,7 @@ const __vite__mapDeps = (
   i,
   m = __vite__mapDeps,
   d = m.f ||
-    (m.f = ["assets/demo-CUN4h6Gz.js", "assets/analysisDemo-DiaidRaO.js"]),
+    (m.f = ["assets/demo-CUN4h6Gz-r1023.js", "assets/analysisDemo-DiaidRaO.js"]),
 ) => i.map((i) => d[i]);
 import {
   C as e,
@@ -28,7 +28,7 @@ import {
   v as b,
   x,
   y as S,
-} from "./index-CckCtOM5.js";
+} from "./index-CckCtOM5-r1023.js";
 import {
   S as C,
   _ as w,
@@ -554,7 +554,7 @@ async function Ne(e, t) {
   Me = !0;
   let { demoCloud: n } = await v(
     async () => {
-      let { demoCloud: e } = await import(`./demo-CUN4h6Gz.js`);
+      let { demoCloud: e } = await import(`./demo-CUN4h6Gz-r1023.js`);
       return { demoCloud: e };
     },
     __vite__mapDeps([0, 1]),
@@ -34427,7 +34427,7 @@ function tL({ ev: e, onBack: t, onCreated: n }) {
             Z.success(`活动已保存`));
         else {
           let { cloud: e } = await v(async () => {
-              let { cloud: e } = await import(`./cloud-JjIzcREA.js`);
+              let { cloud: e } = await import(`./cloud-JjIzcREA-r1023.js`);
               return { cloud: e };
             }, []),
             r = await e(`saveOpenDay`, {
