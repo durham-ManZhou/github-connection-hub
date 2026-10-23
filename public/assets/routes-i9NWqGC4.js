@@ -31831,7 +31831,11 @@ function UF({
 }) {
   let { data: o = [] } = kP(`leads`),
     { data: __trs = [] } = kP(`transfers`),
-    __pendAssign = new Set(__trs.filter((x) => x.status === `待接收` && (x.kind === `assign` || x.from === `未分配`)).map((x) => x.lead_id)),
+    __pendAssign = (() => {
+      let m = new Map();
+      __trs.forEach((x) => { let o = m.get(x.lead_id); if (!o || String(x.created_at || ``) > String(o.created_at || ``)) m.set(x.lead_id, x); });
+      return new Set([...m.values()].filter((x) => x.status === `待接收` && (x.kind === `assign` || x.from === `未分配`)).map((x) => x.lead_id));
+    })(),
     s = p(),
     c = CF(0),
     l = !i,
@@ -31886,7 +31890,7 @@ function UF({
       跟进中: (e) => e.status === `跟进中`,
       已报名: (e) => e.status === `已报名`,
       无效: (e) => e.status === `无效`,
-      待分配: (e) => !e.owner && e.status !== `无效`,
+      待分配: (e) => !e.owner && e.status !== `无效` && !__pendAssign.has(e.id),
       高意向: (e) => (e.level || `C`) === f && Ae(e),
     },
     Fe = (0, I.useMemo)(
@@ -32093,7 +32097,11 @@ function UF({
         async () => {
           let __tr = [];
           try { __tr = JSON.parse(localStorage.getItem(`admin-demo-db-v3`) || `{}`).transfers || []; } catch {}
-          let __ids = ee.filter((id) => !__tr.some((x) => x.lead_id === id && (x.status === `待接收` || x.status === `待审批`)));
+          let __latest = (id) => __tr.filter((x) => x.lead_id === id).sort((a, b) => String(b.created_at || ``).localeCompare(String(a.created_at || ``)))[0];
+          let __ids = ee.filter((id) => { let x = __latest(id); return !(x && (x.status === `待接收` || x.status === `待审批`)); });
+          for (let id of __ids)
+            for (let x of __tr.filter((x) => x.lead_id === id && (x.status === `待接收` || x.status === `待审批`)))
+              await Pe(`adminSave`, { table: `transfers`, id: x.id, values: { status: `已作废` } });
           if (!__ids.length) throw Error(`勾选的客户都已在等待接收，不能重复分配`);
           for (let id of __ids) {
             let l = ke.find((x) => x.id === id);
