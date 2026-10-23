@@ -31830,6 +31830,8 @@ function UF({
   initialRange: a,
 }) {
   let { data: o = [] } = kP(`leads`),
+    { data: __trs = [] } = kP(`transfers`),
+    __pendAssign = new Set(__trs.filter((x) => x.status === `待接收` && (x.kind === `assign` || x.from === `未分配`)).map((x) => x.lead_id)),
     s = p(),
     c = CF(0),
     l = !i,
@@ -31965,6 +31967,7 @@ function UF({
           (h !== `全部` && (t.level || `C`) !== h) ||
           (_ !== `全部` && t.country !== _) ||
           (y === `未分配` && t.owner) ||
+          ((y === `未分配` || xe === `未分配`) && __pendAssign.has(t.id)) ||
           (y !== `全部` && y !== `未分配` && t.owner !== y) ||
           (M && !He.has(EF(t.phone))) ||
           (pe !== `全部` && t.education !== pe) ||

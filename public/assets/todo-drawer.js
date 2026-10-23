@@ -201,7 +201,7 @@
             text:
               q(t.to, myName) + " 拒绝接收客户 " + q(leadName(t.lead_id), myName) +
               (t.decline_reason ? "（原因：" + t.decline_reason + "）" : "") +
-              (unassigned ? "，该客户仍为未分配，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
+              (unassigned ? "，该客户已重新回到「未分配」列表，请重新分配" : "，客户已退回 " + q(t.from, myName) + " 名下，请重新处理"),
             actions: [],
           });
         });
