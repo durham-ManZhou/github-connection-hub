@@ -30792,6 +30792,7 @@ function TF(e) {
 function EF(e) {
   return String(e || ``).replace(/\D/g, ``);
 }
+var __NEW_LEAD = { __new: !0 };
 function DF({ lead: e, author: t, onClose: n }) {
   let { data: r = [] } = kP(`lead_notes`),
     { save: i, remove: a } = AP(),
@@ -32096,7 +32097,7 @@ function UF({
       .filter((e) => e.late > 0)
       .sort((e, t) => t.late - e.late || t.n - e.n),
     Qe = i ? [] : n.filter((e) => e.view !== `工作台`),
-    $e = se === `__new` ? { __new: !0 } : ke.find((e) => e.id === se) ?? null,
+    $e = se === `__new` ? __NEW_LEAD : ke.find((e) => e.id === se) ?? null,
     et = (e) =>
       te((t) => (t.includes(e) ? t.filter((t) => t !== e) : [...t, e])),
     tt = qe.length > 0 && qe.every((e) => ee.includes(e.id)),
