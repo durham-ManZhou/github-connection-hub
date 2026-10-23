@@ -30936,7 +30936,7 @@ function DF({ lead: e, author: t, onClose: n }) {
           (0, L.jsxs)(`div`, {
             className: `flex-1 space-y-5 overflow-y-auto p-5`,
             children: [
-              (0, L.jsx)(__Unmerge, { lead: e, author: t }),
+              !e.__new && (0, L.jsx)(__Unmerge, { lead: e, author: t }),
               (0, L.jsxs)(`div`, {
                 className: `grid grid-cols-2 gap-3`,
                 children: [
