@@ -757,6 +757,19 @@ async function f(e, t) {
         let old = [...new Set(names.filter((e) => e && e !== row.name))];
         old.length && (row.formerNames = [...new Set([...(row.formerNames || []), ...old])]);
       }
+      /* 已撤回的转交申请：除申请人外，所有人（审批人、被转交人）的原申请消息一律抹去，包括以前撤回时遗留的 */
+      for (let tr of r(`transfers`)) {
+        if (!tr || tr.status !== `已撤回` || tr.direct) continue;
+        let tag = `转给「${tr.to}」`;
+        for (let nt of [...r(`notifications`)]) {
+          if (!nt || nt.ref !== tr.lead_id || typeof nt.text !== `string`) continue;
+          if (nt.text.indexOf(`申请把`) < 0 || nt.text.indexOf(tag) < 0) continue;
+          let keep = (nt.to || []).filter((x) => x === tr.from);
+          if (keep.length === (nt.to || []).length) continue;
+          if (keep.length) nt.to = keep;
+          else n.notifications = r(`notifications`).filter((x) => x !== nt);
+        }
+      }
       d(n);
       return {
         ...n,
