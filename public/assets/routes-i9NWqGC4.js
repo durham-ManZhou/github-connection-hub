@@ -30792,6 +30792,7 @@ function TF(e) {
 function EF(e) {
   return String(e || ``).replace(/\D/g, ``);
 }
+var __NEW_LEAD = { __new: !0 };
 function DF({ lead: e, author: t, onClose: n }) {
   let { data: r = [] } = kP(`lead_notes`),
     { save: i, remove: a } = AP(),
@@ -30833,6 +30834,14 @@ function DF({ lead: e, author: t, onClose: n }) {
       if (f.length > 500) return void Z.error(`备注不超过 500 字`);
       h(!0);
       try {
+        if (e.__new) {
+          if (!u.name.trim()) return void Z.error(`请填写客户姓名`);
+          if (!u.phone.trim() && !u.wechat.trim()) return void Z.error(`电话和微信号至少填一项`);
+          await i(`leads`, { ...u, owner: ``, note: f.trim(), author: t, created_at: new Date().toISOString() });
+          Z.success(`已新增客户「${u.name.trim()}」，已放入未分配`);
+          n();
+          return;
+        }
         (await i(`leads`, { ...u, note: f.trim(), author: t }, e.id),
           p(``),
           Z.success(`已保存`));
@@ -30860,11 +30869,11 @@ function DF({ lead: e, author: t, onClose: n }) {
                 children: [
                   (0, L.jsx)(`p`, {
                     className: `font-display font-bold`,
-                    children: e.name,
+                    children: e.__new ? `新增客户` : e.name,
                   }),
                   (0, L.jsxs)(`p`, {
                     className: `text-xs text-muted-foreground`,
-                    children: [`提交于 `, NP(e.created_at)],
+                    children: e.__new ? [`保存后进入未分配，由专人分配`] : [`提交于 `, NP(e.created_at)],
                   }),
                 ],
               }),
@@ -31739,7 +31748,7 @@ function NF({ leads: e, allLeads: t, me: n, isSuper: r, canApprove: canApproveTr
                   e.status === `待审批` &&
                     (0, L.jsx)(`button`, {
                       type: `button`,
-                      className: `text-xs font-semibold text-destructive underline`,
+                      className: `rounded-full bg-destructive px-4 py-1.5 text-sm font-semibold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:opacity-60`,
                       disabled: p,
                       onClick: () =>
                         O(async () => {
@@ -32088,7 +32097,7 @@ function UF({
       .filter((e) => e.late > 0)
       .sort((e, t) => t.late - e.late || t.n - e.n),
     Qe = i ? [] : n.filter((e) => e.view !== `工作台`),
-    $e = ke.find((e) => e.id === se) ?? null,
+    $e = se === `__new` ? __NEW_LEAD : ke.find((e) => e.id === se) ?? null,
     et = (e) =>
       te((t) => (t.includes(e) ? t.filter((t) => t !== e) : [...t, e])),
     tt = qe.length > 0 && qe.every((e) => ee.includes(e.id)),
@@ -32232,11 +32241,21 @@ function UF({
       (0, L.jsx)(_P, {
         title: `工作台`,
         desc: `客服在这里追踪、标记每一位潜在客户：逾期和今天要联系的排在最前，点开客户即可记录沟通、打标签、约下次跟进。`,
-        action: (0, L.jsxs)(X, {
-          variant: `outline`,
-          onClick: () => oe(!0),
-          disabled: !qe.length,
-          children: [(0, L.jsx)(rt, { className: `size-4` }), `导出当前筛选`],
+        action: (0, L.jsxs)(`div`, {
+          className: `flex flex-wrap items-center gap-2`,
+          children: [
+            __role() !== `advisor` &&
+              (0, L.jsx)(X, {
+                onClick: () => ce(`__new`),
+                children: `+ 新增客户`,
+              }),
+            (0, L.jsxs)(X, {
+              variant: `outline`,
+              onClick: () => oe(!0),
+              disabled: !qe.length,
+              children: [(0, L.jsx)(rt, { className: `size-4` }), `导出当前筛选`],
+            }),
+          ],
         }),
       }),
       (0, L.jsxs)(`div`, {
@@ -42925,7 +42944,7 @@ function __AdvisorHistory({ me: me, account: account }) {
                       e.tstatus === `待审批` &&
                         (0, L.jsx)(`button`, {
                           type: `button`,
-                          className: `text-xs font-semibold text-destructive underline`,
+                          className: `rounded-full bg-destructive px-4 py-1.5 text-sm font-semibold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:opacity-60`,
                           onClick: () => __withdraw(e),
                           children: `撤回`,
                         }),
