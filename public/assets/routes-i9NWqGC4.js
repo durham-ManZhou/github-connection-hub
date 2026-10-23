@@ -31831,7 +31831,11 @@ function UF({
 }) {
   let { data: o = [] } = kP(`leads`),
     { data: __trs = [] } = kP(`transfers`),
-    __pendAssign = new Set(__trs.filter((x) => x.status === `待接收` && (x.kind === `assign` || x.from === `未分配`)).map((x) => x.lead_id)),
+    __pendAssign = (() => {
+      let m = new Map();
+      __trs.forEach((x) => { let o = m.get(x.lead_id); if (!o || String(x.created_at || ``) > String(o.created_at || ``)) m.set(x.lead_id, x); });
+      return new Set([...m.values()].filter((x) => x.status === `待接收` && (x.kind === `assign` || x.from === `未分配`)).map((x) => x.lead_id));
+    })(),
     s = p(),
     c = CF(0),
     l = !i,
