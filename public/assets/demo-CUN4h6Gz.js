@@ -299,7 +299,7 @@ function s() {
   let i = (r.profiles ||= []),
     a = !1;
   for (let row of [...i, ...(r.registrations || [])]) {
-    let k = String(row.account || ``).trim().toLowerCase();
+    let k = String(row.account || ``).trim();
     row.account !== k && ((row.account = k), (a = !0));
   }
   let removed = new Set(r._settings?.removedProfiles || []);
@@ -381,12 +381,12 @@ function d(e) {
 }
 async function f(e, t) {
   t && typeof t == `object` && (t = { ...t },
-    [`account`, `accountNew`].forEach((k) => typeof t[k] == `string` && (t[k] = t[k].trim().toLowerCase())));
+    [`account`, `accountNew`].forEach((k) => typeof t[k] == `string` && (t[k] = t[k].trim())));
   let n = s(),
     r = (e) => (n[e] ||= []);
   switch (e) {
     case `loginAdmin`: {
-      let account = String(t.account || ``).trim().toLowerCase(),
+      let account = String(t.account || ``).trim(),
         e = r(`profiles`).find((e) => e.account === account || e.account === t.account);
       let pending = r(`registrations`).find(
         (row) => row.account === account && row.status === `pending`,
@@ -410,7 +410,7 @@ async function f(e, t) {
       throw Error(`账号或密码不正确`);
     }
     case `registerAdmin`: {
-      let account = String(t.account || ``).trim().toLowerCase(),
+      let account = String(t.account || ``).trim(),
         name = String(t.name || ``).trim(),
         password = String(t.password || ``);
       if (name.length < 1 || name.length > 40) throw Error(`姓名 1 到 40 字`);
@@ -517,7 +517,7 @@ async function f(e, t) {
       let e = r(`profiles`).find((row) => row.account === t.actor);
       if (!e) throw Error(`账号不存在`);
       let name = String(t.name || ``).trim(),
-        account = String(t.account || ``).trim().toLowerCase();
+        account = String(t.account || ``).trim();
       if (name.length < 1 || name.length > 40) throw Error(`姓名 1 到 40 字`);
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(account)) throw Error(`邮箱格式不正确`);
       if (name === e.name && account === e.account) throw Error(`姓名和邮箱都没有变化`);
