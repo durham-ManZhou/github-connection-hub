@@ -30815,6 +30815,17 @@ function TF(e) {
 function EF(e) {
   return String(e || ``).replace(/\D/g, ``);
 }
+function __EW(e) {
+  return String(e || ``).trim().toLowerCase();
+}
+var __DUPCOLORS = [
+  [`#fef3c7`, `#b45309`],
+  [`#e0f2fe`, `#0369a1`],
+  [`#d1fae5`, `#047857`],
+  [`#fce7f3`, `#be185d`],
+  [`#ede9fe`, `#6d28d9`],
+  [`#ffedd5`, `#c2410c`],
+];
 var __NEW_LEAD = { __new: !0 };
 function __OwnerPick({ value: v, onChange: oc, options: opts, allowNone: an, placeholder: ph, className: cn, label: lb }) {
   let [open, setOpen] = (0, I.useState)(!1),
@@ -31958,6 +31969,7 @@ function UF({
       } else D || (O(E(-6)), A(E(0)));
     },
     [M, N] = (0, I.useState)(!1),
+    [__dupW, __setDupW] = (0, I.useState)(!1),
     [ee, te] = (0, I.useState)([]),
     [P, ne] = (0, I.useState)(``),
     [re, ie] = (0, I.useState)(!1),
@@ -32035,6 +32047,39 @@ function UF({
         new Set([...e].filter(([, e]) => e > 1).map(([e]) => e))
       );
     }, [ke]),
+    __HW = (0, I.useMemo)(() => {
+      let e = new Map();
+      return (
+        ke.forEach((t) => {
+          let n = __EW(t.wechat);
+          n && e.set(n, (e.get(n) || 0) + 1);
+        }),
+        new Set([...e].filter(([, e]) => e > 1).map(([e]) => e))
+      );
+    }, [ke]),
+    __GMAP = (0, I.useMemo)(() => {
+      let e = new Map();
+      return (
+        ke.forEach((t) => {
+          let n = EF(t.phone),
+            r = __EW(t.wechat);
+          (n && He.has(n) && !e.has(`p:` + n) && e.set(`p:` + n, e.size),
+            r && __HW.has(r) && !e.has(`w:` + r) && e.set(`w:` + r, e.size));
+        }),
+        e
+      );
+    }, [ke, He, __HW]),
+    __grpOf = (e) => {
+      let t = EF(e.phone),
+        n = __EW(e.wechat),
+        r = [];
+      return (
+        t && He.has(t) && r.push(`p:` + t),
+        n && __HW.has(n) && r.push(`w:` + n),
+        r.sort(),
+        r
+      );
+    },
     R = (e) => {
       let t = String(e.last_contact_at || ``).slice(0, 10);
       return Ce === `全部`
@@ -32076,6 +32121,7 @@ function UF({
           ((y === `未分配` || xe === `未分配`) && __pendAssign.has(t.id)) ||
           (y !== `全部` && y !== `未分配` && t.owner !== y) ||
           (M && !He.has(EF(t.phone))) ||
+          (__dupW && !__HW.has(__EW(t.wechat))) ||
           (pe !== `全部` && t.education !== pe) ||
           (he !== `全部` && t.budget !== he) ||
           (_e !== `全部` && t.project !== _e) ||
@@ -32091,13 +32137,15 @@ function UF({
               .includes(e))
         );
       });
-    }, [ke, h, _, y, x, M, He, D, k, pe, he, _e, ye, xe, De, Ce, Te]),
+    }, [ke, h, _, y, x, M, He, __dupW, __HW, D, k, pe, he, _e, ye, xe, De, Ce, Te]),
     qe = (0, I.useMemo)(
       () =>
         Ge.filter((e) => Ne[u](e)).sort((e, t) => {
           let n = (e) =>
-            je(e) ? 0 : Me(e) ? 1 : e.status === `待跟进` ? 2 : Ae(e) ? 3 : 4;
+              je(e) ? 0 : Me(e) ? 1 : e.status === `待跟进` ? 2 : Ae(e) ? 3 : 4,
+            r = (e) => __grpOf(e)[0] || `~`;
           return (
+            ((M || __dupW) && r(e) !== r(t) && r(e).localeCompare(r(t))) ||
             n(e) - n(t) ||
             String(e.next_follow_at || `9`).localeCompare(
               String(t.next_follow_at || `9`),
@@ -32105,7 +32153,7 @@ function UF({
             String(t.created_at).localeCompare(String(e.created_at))
           );
         }),
-      [Ge, u, f],
+      [Ge, u, f, M, __dupW, He, __HW],
     ),
     Je = (e) => Ge.filter(Ne[e]).length,
     Ye = [
@@ -32435,6 +32483,17 @@ function UF({
           }),
           (0, L.jsxs)(`button`, {
             type: `button`,
+            onClick: () => __setDupW((e) => !e),
+            className: Y(
+              `h-10 rounded-full px-4 text-sm font-semibold`,
+              __dupW
+                ? `bg-primary text-primary-foreground`
+                : `bg-card text-primary`,
+            ),
+            children: [`重复微信号 `, __HW.size ? `(${__HW.size})` : ``],
+          }),
+          (0, L.jsxs)(`button`, {
+            type: `button`,
             "aria-label": `更多筛选`,
             onClick: () => ue(!0),
             className: Y(
@@ -32607,11 +32666,19 @@ function UF({
                           children: qe.map((e) => {
                             let t = je(e),
                               n = Me(e),
-                              r = RF(e.last_contact_at);
+                              r = RF(e.last_contact_at),
+                              __gr = __grpOf(e),
+                              __gc = __gr.length
+                                ? __DUPCOLORS[
+                                    (__GMAP.get(__gr[0]) || 0) %
+                                      __DUPCOLORS.length
+                                  ]
+                                : null;
                             return (0, L.jsxs)(
                               `tr`,
                               {
                                 onClick: () => ce(e.id),
+                                style: __gc ? { background: __gc[0] } : void 0,
                                 className: Y(
                                   `cursor-pointer whitespace-nowrap border-t border-border hover:bg-accent/50`,
                                   e.id === se && `bg-accent`,
@@ -32666,14 +32733,36 @@ function UF({
                                       e.phone,
                                       He.has(EF(e.phone)) &&
                                         (0, L.jsx)(`span`, {
-                                          className: `ml-1 text-xs text-warning`,
-                                          children: `· 重复`,
+                                          className: `ml-1 text-xs font-semibold`,
+                                          style: {
+                                            color:
+                                              __DUPCOLORS[
+                                                (__GMAP.get(
+                                                  `p:` + EF(e.phone),
+                                                ) || 0) % __DUPCOLORS.length
+                                              ][1],
+                                          },
+                                          children: `· 重复电话`,
                                         }),
                                       (0, L.jsxs)(`p`, {
                                         className: `text-xs text-muted-foreground`,
                                         children: [
                                           `微信：`,
                                           e.wechat || `未填写`,
+                                          __HW.has(__EW(e.wechat)) &&
+                                            (0, L.jsx)(`span`, {
+                                              className: `ml-1 text-xs font-semibold`,
+                                              style: {
+                                                color:
+                                                  __DUPCOLORS[
+                                                    (__GMAP.get(
+                                                      `w:` + __EW(e.wechat),
+                                                    ) || 0) %
+                                                      __DUPCOLORS.length
+                                                  ][1],
+                                              },
+                                              children: `· 重复微信`,
+                                            }),
                                         ],
                                       }),
                                     ],
@@ -33118,6 +33207,7 @@ function UF({
                 [`等级`, h === `全部` ? `全部` : `${h} 级`],
                 ...(l ? [[`顾问`, y]] : []),
                 [`重复手机号`, M ? `只看重复` : `全部`],
+                [`重复微信号`, __dupW ? `只看重复` : `全部`],
                 ...(u === `高意向` ? [[`高意向等级`, `${f} 级`]] : []),
                 [`学历`, pe],
                 [`预算`, he],
