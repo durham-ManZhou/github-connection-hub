@@ -28,7 +28,7 @@ import {
   v as b,
   x,
   y as S,
-} from "./index-CckCtOM5-r1023e.js";
+} from "./index-CckCtOM5-r1023f.js";
 import {
   S as C,
   _ as w,
@@ -534,10 +534,33 @@ function Oe(e, t) {
 var ke = `admin-session`;
 function Ae() {
   try {
-    let e = sessionStorage.getItem(ke);
-    if (e) return JSON.parse(e);
-    let t = localStorage.getItem(ke);
-    return (t && sessionStorage.setItem(ke, t), t ? JSON.parse(t) : null);
+    let e = sessionStorage.getItem(ke),
+      s = null;
+    if (e) s = JSON.parse(e);
+    else {
+      let t = localStorage.getItem(ke);
+      (t && sessionStorage.setItem(ke, t), (s = t ? JSON.parse(t) : null));
+    }
+    /* 按最新账号资料同步身份与授权：身份被改后刷新即生效；账号被删则退出 */
+    if (s && s.account) {
+      let db = JSON.parse(localStorage.getItem(`admin-demo-db-v3`) || `null`),
+        list = db && Array.isArray(db.profiles) ? db.profiles : null;
+      if (list && list.length) {
+        let p = list.find((x) => x.account === s.account);
+        if (!p || p.active === !1) {
+          sessionStorage.removeItem(ke);
+          try { sessionStorage.setItem(`admin-session-kicked`, `1`); } catch {}
+          return null;
+        }
+        let role = p.role || `advisor`,
+          granted = role === `specialist` && !!p.admin_granted;
+        if (s.role !== role || !!s.admin_granted !== granted || s.name !== p.name) {
+          s = { ...s, role, admin_granted: granted, name: p.name };
+          sessionStorage.setItem(ke, JSON.stringify(s));
+        }
+      }
+    }
+    return s;
   } catch {
     return null;
   }
@@ -34448,7 +34471,7 @@ function tL({ ev: e, onBack: t, onCreated: n }) {
             Z.success(`活动已保存`));
         else {
           let { cloud: e } = await v(async () => {
-              let { cloud: e } = await import(`./cloud-JjIzcREA-r1023e.js`);
+              let { cloud: e } = await import(`./cloud-JjIzcREA-r1023f.js`);
               return { cloud: e };
             }, []),
             r = await e(`saveOpenDay`, {
@@ -43818,12 +43841,17 @@ function __PermPage({ currentId: e }) {
                                             oldPassword: __form.oldPassword || ``,
                                             actor: Ae()?.account || ``,
                                           }),
-                                            await __notify(
-                                              [name, t.name],
-                                              `「${name}」的${parts.join(`、`)}已更改`,
-                                              `account`,
-                                              email,
-                                            ),
+                                            await (async () => {
+                                              let roleChanged = __form.role !== (t.role || `advisor`),
+                                                newLabel = __ROLE_LABEL[__form.role] || __form.role,
+                                                others = parts.filter((x) => x !== `身份级别`),
+                                                tail = others.length ? `；${others.join(`、`)}已更改` : ``;
+                                              if (roleChanged) {
+                                                await __notify([name], `「你」的身份已被「${Ae()?.name || `超级管理员`}」变更为「${newLabel}」${tail}`, `account`, email);
+                                                await __notify([Ae()?.name], `「${name}」的身份已由「${__ROLE_LABEL[t.role || `advisor`]}」变更为「${newLabel}」${tail}`, `account`, email);
+                                              } else
+                                                await __notify([name, t.name], `「${name}」的${parts.join(`、`)}已更改`, `account`, email);
+                                            })(),
                                             __setEdit(null),
                                             await i(),
                                             await r.invalidateQueries({ queryKey: EP }),
