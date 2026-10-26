@@ -534,10 +534,33 @@ function Oe(e, t) {
 var ke = `admin-session`;
 function Ae() {
   try {
-    let e = sessionStorage.getItem(ke);
-    if (e) return JSON.parse(e);
-    let t = localStorage.getItem(ke);
-    return (t && sessionStorage.setItem(ke, t), t ? JSON.parse(t) : null);
+    let e = sessionStorage.getItem(ke),
+      s = null;
+    if (e) s = JSON.parse(e);
+    else {
+      let t = localStorage.getItem(ke);
+      (t && sessionStorage.setItem(ke, t), (s = t ? JSON.parse(t) : null));
+    }
+    /* 按最新账号资料同步身份与授权：身份被改后刷新即生效；账号被删则退出 */
+    if (s && s.account) {
+      let db = JSON.parse(localStorage.getItem(`admin-demo-db-v3`) || `null`),
+        list = db && Array.isArray(db.profiles) ? db.profiles : null;
+      if (list && list.length) {
+        let p = list.find((x) => x.account === s.account);
+        if (!p || p.active === !1) {
+          sessionStorage.removeItem(ke);
+          try { sessionStorage.setItem(`admin-session-kicked`, `1`); } catch {}
+          return null;
+        }
+        let role = p.role || `advisor`,
+          granted = role === `specialist` && !!p.admin_granted;
+        if (s.role !== role || !!s.admin_granted !== granted || s.name !== p.name) {
+          s = { ...s, role, admin_granted: granted, name: p.name };
+          sessionStorage.setItem(ke, JSON.stringify(s));
+        }
+      }
+    }
+    return s;
   } catch {
     return null;
   }
