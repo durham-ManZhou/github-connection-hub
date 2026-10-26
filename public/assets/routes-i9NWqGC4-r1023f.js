@@ -43841,12 +43841,17 @@ function __PermPage({ currentId: e }) {
                                             oldPassword: __form.oldPassword || ``,
                                             actor: Ae()?.account || ``,
                                           }),
-                                            await __notify(
-                                              [name, t.name],
-                                              `「${name}」的${parts.join(`、`)}已更改`,
-                                              `account`,
-                                              email,
-                                            ),
+                                            await (async () => {
+                                              let roleChanged = __form.role !== (t.role || `advisor`),
+                                                newLabel = __ROLE_LABEL[__form.role] || __form.role,
+                                                others = parts.filter((x) => x !== `身份级别`),
+                                                tail = others.length ? `；${others.join(`、`)}已更改` : ``;
+                                              if (roleChanged) {
+                                                await __notify([name], `「你」的身份已被「${Ae()?.name || `超级管理员`}」变更为「${newLabel}」${tail}`, `account`, email);
+                                                await __notify([Ae()?.name], `「${name}」的身份已由「${__ROLE_LABEL[t.role || `advisor`]}」变更为「${newLabel}」${tail}`, `account`, email);
+                                              } else
+                                                await __notify([name, t.name], `「${name}」的${parts.join(`、`)}已更改`, `account`, email);
+                                            })(),
                                             __setEdit(null),
                                             await i(),
                                             await r.invalidateQueries({ queryKey: EP }),
