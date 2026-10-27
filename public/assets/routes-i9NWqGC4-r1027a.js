@@ -28,7 +28,7 @@ import {
   v as b,
   x,
   y as S,
-} from "./index-CckCtOM5-r1023f.js";
+} from "./index-CckCtOM5-r1027a.js";
 import {
   S as C,
   _ as w,
@@ -30933,6 +30933,11 @@ function DF({ lead: e, author: t, onClose: n }) {
           n();
           return;
         }
+        let __s0 = e.status === `新线索` ? `待跟进` : e.status || `待跟进`;
+        if (u.status !== __s0) {
+          if (!f.trim()) return void Z.error(`修改状态必须填写跟进记录`);
+          if (!f.startsWith(`【状态`)) f = `【状态由「${__s0}」改为「${u.status}」】` + f.trim();
+        }
         let __old = (e.owner || ``).trim(),
           __new = (u.owner || ``).trim();
         if (__new && __new !== __old) {
@@ -31934,6 +31939,18 @@ function BF(e) {
 }
 var VF = [`全部`, `今天`, `近7天`, `近30天`, `从未联系`],
   HF = [`全部`, `今天`, `近7天`, `已逾期`, `未设置`];
+function __fmtEntry(v) {
+  if (!v) return `—`;
+  let d = new Date(new Date(v).getTime() + 8 * 36e5);
+  if (Number.isNaN(d.getTime())) return `—`;
+  let z = (x) => String(x).padStart(2, `0`);
+  return `${d.getUTCFullYear()}年${z(d.getUTCMonth() + 1)}月${z(d.getUTCDate())}日${z(d.getUTCHours())}:${z(d.getUTCMinutes())}:${z(d.getUTCSeconds())}`;
+}
+function __wmBg(name) {
+  let esc = (x) => String(x || ``).replace(/[&<>"']/g, (c) => ({ "&": `&amp;`, "<": `&lt;`, ">": `&gt;`, '"': `&quot;`, "'": `&apos;` })[c]);
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="220"><text x="20" y="130" transform="rotate(-20 180 110)" font-size="15" font-family="Noto Sans SC, sans-serif" fill="rgba(100,116,139,0.13)">${esc(`安徽财经大学海外教育 ${name || ``}`)}</text></svg>`;
+  return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
 function UF({
   focusId: e,
   author: t,
@@ -31944,6 +31961,8 @@ function UF({
 }) {
   let { data: o = [] } = kP(`leads`),
     { data: __trs = [] } = kP(`transfers`),
+    { data: __lnAll = [] } = kP(`lead_notes`),
+    [__fuMode, __setFuMode] = (0, I.useState)(`条数`),
     __pendAssign = (() => {
       let m = new Map();
       __trs.forEach((x) => { let o = m.get(x.lead_id); if (!o || String(x.created_at || ``) > String(o.created_at || ``)) m.set(x.lead_id, x); });
@@ -31997,8 +32016,11 @@ function UF({
     je = (e) =>
       Ae(e) && e.next_follow_at && String(e.next_follow_at).slice(0, 10) < c,
     Me = (e) => Ae(e) && String(e.next_follow_at || ``).slice(0, 10) === c,
+    __lnToday = __lnAll.filter((x) => x && x.lead_id && NP(x.created_at, !1) === c),
+    __fuIds = new Set(__lnToday.map((x) => x.lead_id)),
     Ne = {
       全部: () => !0,
+      新增跟进: (e) => __fuIds.has(e.id),
       逾期: (e) => !!je(e),
       待跟进: (e) => e.status === `待跟进`,
       跟进中: (e) => e.status === `跟进中`,
@@ -32146,17 +32168,26 @@ function UF({
             r = (e) => __grpOf(e)[0] || `~`;
           return (
             ((M || __dupW) && r(e) !== r(t) && r(e).localeCompare(r(t))) ||
-            n(e) - n(t) ||
-            String(e.next_follow_at || `9`).localeCompare(
-              String(t.next_follow_at || `9`),
-            ) ||
-            String(t.created_at).localeCompare(String(e.created_at))
+            (+new Date(t.created_at || 0) || 0) - (+new Date(e.created_at || 0) || 0)
           );
         }),
       [Ge, u, f, M, __dupW, He, __HW],
     ),
-    Je = (e) => Ge.filter(Ne[e]).length,
+    Je = (e) => {
+      if (e === `新增跟进` && __fuMode === `条数`) {
+        let __ids = new Set(Ge.map((x) => x.id));
+        return __lnToday.filter((x) => __ids.has(x.lead_id)).length;
+      }
+      return Ge.filter(Ne[e]).length;
+    },
     Ye = [
+      {
+        k: `新增跟进`,
+        label: `新增跟进`,
+        note: __fuMode === `条数` ? `今天新写的跟进记录条数` : `今天被跟进的客户人数`,
+        icon: yt,
+        tone: `bg-positive-soft text-positive`,
+      },
       {
         k: `逾期`,
         label: `逾期未跟进`,
@@ -32360,11 +32391,12 @@ function UF({
         ],
       });
   return (0, L.jsxs)(`div`, {
-    className: `space-y-5`,
+    className: `relative space-y-5`,
+    style: { backgroundImage: __wmBg(t), backgroundRepeat: `repeat` },
     children: [
       (0, L.jsx)(_P, {
         title: `工作台`,
-        desc: `客服在这里追踪、标记每一位潜在客户：逾期和今天要联系的排在最前，点开客户即可记录沟通、打标签、约下次跟进。`,
+        desc: `客服在这里追踪、标记每一位潜在客户：按录入时间从新到旧排列，点开客户即可记录沟通、打标签、约下次跟进。`,
         action: (0, L.jsxs)(`div`, {
           className: `flex flex-wrap items-center gap-2`,
           children: [
@@ -32517,7 +32549,7 @@ function UF({
         ],
       }),
       (0, L.jsx)(`section`, {
-        className: `grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-7`,
+        className: `grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-8`,
         children: Ye.map(({ k: e, label: t, note: n, icon: r, tone: i }) =>
           (0, L.jsxs)(
             `button`,
@@ -32537,7 +32569,27 @@ function UF({
                       className: `text-sm font-medium text-muted-foreground`,
                       children: t,
                     }),
-                    (0, L.jsx)(`span`, {
+                    e === `新增跟进`
+                      ? (0, L.jsx)(`span`, {
+                          className: `flex rounded-full bg-muted p-0.5 text-xs`,
+                          onClick: (x) => x.stopPropagation(),
+                          children: [`条数`, `人数`].map((m) =>
+                            (0, L.jsx)(
+                              `span`,
+                              {
+                                role: `button`,
+                                "aria-label": `新增跟进按${m}`,
+                                onClick: (x) => {
+                                  (x.stopPropagation(), __setFuMode(m));
+                                },
+                                className: `cursor-pointer rounded-full px-2 py-0.5 ${__fuMode === m ? `bg-card font-semibold text-primary shadow-sm` : `text-muted-foreground`}`,
+                                children: m,
+                              },
+                              m,
+                            ),
+                          ),
+                        })
+                      : (0, L.jsx)(`span`, {
                       className: Y(
                         `grid size-9 place-items-center rounded-2xl`,
                         i,
@@ -32639,6 +32691,7 @@ function UF({
                                 }),
                               }),
                               [
+                                `录入时间`,
                                 `客户`,
                                 `电话 / 微信`,
                                 `意向`,
@@ -32694,6 +32747,10 @@ function UF({
                                       onClick: (e) => e.stopPropagation(),
                                       onChange: () => et(e.id),
                                     }),
+                                  }),
+                                  (0, L.jsx)(`td`, {
+                                    className: `px-4 py-3 text-xs text-muted-foreground`,
+                                    children: __fmtEntry(e.created_at),
                                   }),
                                   (0, L.jsxs)(`td`, {
                                     className: `px-4 py-3`,
@@ -34561,7 +34618,7 @@ function tL({ ev: e, onBack: t, onCreated: n }) {
             Z.success(`活动已保存`));
         else {
           let { cloud: e } = await v(async () => {
-              let { cloud: e } = await import(`./cloud-JjIzcREA-r1023f.js`);
+              let { cloud: e } = await import(`./cloud-JjIzcREA-r1027a.js`);
               return { cloud: e };
             }, []),
             r = await e(`saveOpenDay`, {
