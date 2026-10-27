@@ -28,7 +28,7 @@ import {
   v as b,
   x,
   y as S,
-} from "./index-CckCtOM5-r1023f.js";
+} from "./index-CckCtOM5-r1027a.js";
 import {
   S as C,
   _ as w,
@@ -34618,7 +34618,7 @@ function tL({ ev: e, onBack: t, onCreated: n }) {
             Z.success(`活动已保存`));
         else {
           let { cloud: e } = await v(async () => {
-              let { cloud: e } = await import(`./cloud-JjIzcREA-r1023f.js`);
+              let { cloud: e } = await import(`./cloud-JjIzcREA-r1027a.js`);
               return { cloud: e };
             }, []),
             r = await e(`saveOpenDay`, {
