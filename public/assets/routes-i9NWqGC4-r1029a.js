@@ -28,7 +28,7 @@ import {
   v as b,
   x,
   y as S,
-} from "./index-CckCtOM5-r1028a.js";
+} from "./index-CckCtOM5-r1029a.js";
 import {
   S as C,
   _ as w,
@@ -31948,7 +31948,7 @@ function __fmtEntry(v) {
 }
 function __wmBg(name) {
   let esc = (x) => String(x || ``).replace(/[&<>"']/g, (c) => ({ "&": `&amp;`, "<": `&lt;`, ">": `&gt;`, '"': `&quot;`, "'": `&apos;` })[c]);
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300"><text x="24" y="170" transform="rotate(-20 280 150)" font-size="24" font-family="Noto Sans SC, sans-serif" fill="rgba(71,85,105,0.35)">${esc(`安徽财经大学海外教育 ${name || ``}`)}</text></svg>`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="240"><text x="18" y="140" transform="rotate(-20 220 120)" font-size="18" font-family="Noto Sans SC, sans-serif" fill="rgba(71,85,105,0.18)">${esc(`安徽财经大学海外教育 ${name || ``}`)}</text></svg>`;
   return `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
 }
 function UF({
@@ -34618,7 +34618,7 @@ function tL({ ev: e, onBack: t, onCreated: n }) {
             Z.success(`活动已保存`));
         else {
           let { cloud: e } = await v(async () => {
-              let { cloud: e } = await import(`./cloud-JjIzcREA-r1028a.js`);
+              let { cloud: e } = await import(`./cloud-JjIzcREA-r1029a.js`);
               return { cloud: e };
             }, []),
             r = await e(`saveOpenDay`, {
