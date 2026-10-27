@@ -34618,7 +34618,7 @@ function tL({ ev: e, onBack: t, onCreated: n }) {
             Z.success(`活动已保存`));
         else {
           let { cloud: e } = await v(async () => {
-              let { cloud: e } = await import(`./cloud-JjIzcREA-r1027a.js`);
+              let { cloud: e } = await import(`./cloud-JjIzcREA-r1028a.js`);
               return { cloud: e };
             }, []),
             r = await e(`saveOpenDay`, {
